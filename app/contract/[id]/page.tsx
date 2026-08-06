@@ -16,6 +16,7 @@ export default function ContractPage() {
   const [contractText, setContractText] = useState("");
 
   const [signature, setSignature] = useState("");
+  const [completed, setCompleted] = useState(false);
 
   useEffect(() => {
     loadContract();
@@ -36,10 +37,8 @@ export default function ContractPage() {
     setCompany(data.company);
     setContractor(data.contractor);
     setContractText(data.contract_text);
-
-    if (data.signature) {
-      setSignature(data.signature);
-    }
+    setSignature(data.signature ?? "");
+    setCompleted(data.status === "completed");
   };
 
   const handleSave = (image: string) => {
@@ -67,25 +66,31 @@ export default function ContractPage() {
       return;
     }
 
-    alert("계약이 완료되었습니다.");
+    await loadContract();
+    alert("전자계약이 완료되었습니다.");
   };
 
   return (
     <main className="min-h-screen bg-gray-100 p-10">
+
       <ContractView
         company={company}
         contractor={contractor}
         contractText={contractText}
         signature={signature}
+        completed={completed}
         onSign={() => setOpen(true)}
         onComplete={handleComplete}
       />
 
-      <SignatureModal
-        open={open}
-        onClose={() => setOpen(false)}
-        onSave={handleSave}
-      />
+      {!completed && (
+        <SignatureModal
+          open={open}
+          onClose={() => setOpen(false)}
+          onSave={handleSave}
+        />
+      )}
+
     </main>
   );
 }

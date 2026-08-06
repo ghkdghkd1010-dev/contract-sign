@@ -5,6 +5,7 @@ interface ContractViewProps {
   contractor: string;
   contractText: string;
   signature: string;
+  completed: boolean;
   onSign: () => void;
   onComplete: () => void;
 }
@@ -14,6 +15,7 @@ export default function ContractView({
   contractor,
   contractText,
   signature,
+  completed,
   onSign,
   onComplete,
 }: ContractViewProps) {
@@ -68,22 +70,35 @@ export default function ContractView({
 
       </div>
 
-      <div className="flex justify-end gap-3 mt-6">
+      <div className="flex justify-end gap-3 mt-8">
 
-        {!signature ? (
+        {completed ? (
+
+          <button
+            disabled
+            className="bg-gray-400 text-white px-8 py-3 rounded-lg cursor-not-allowed"
+          >
+            계약 완료
+          </button>
+
+        ) : !signature ? (
+
           <button
             onClick={onSign}
             className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700"
           >
             서명하기
           </button>
+
         ) : (
+
           <button
             onClick={onComplete}
             className="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700"
           >
-            계약 완료
+            확인
           </button>
+
         )}
 
       </div>
