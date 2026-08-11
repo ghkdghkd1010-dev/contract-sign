@@ -21,19 +21,23 @@ export default function ContractView({
 }: ContractViewProps) {
   return (
     <div className="mx-auto w-full max-w-[1000px] overflow-hidden bg-white shadow-sm">
-      {/* 상단 문서 헤더 */}
+      {/* =========================
+          상단 문서 헤더
+      ========================= */}
       <header className="border-b-[3px] border-[#18283f] px-5 py-6 sm:px-8 sm:py-7 md:px-10">
         <div className="flex items-start justify-between gap-4">
+          {/* 왼쪽 로고 + 기관명 */}
           <div className="flex min-w-0 items-center gap-3 sm:gap-4">
-            {/* 37사단 마크 */}
-            <div className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full border-[3px] border-[#18283f] sm:h-[68px] sm:w-[68px]">
-              <div className="flex h-[40px] w-[40px] items-center justify-center rounded-full border border-[#18283f] sm:h-[54px] sm:w-[54px]">
-                <span className="text-[17px] font-bold text-[#18283f] sm:text-[22px]">
-                  37
-                </span>
-              </div>
+            {/* 37사단 실제 로고 */}
+            <div className="h-[52px] w-[52px] shrink-0 sm:h-[68px] sm:w-[68px]">
+              <img
+                src="/37-logo.webp"
+                alt="제37보병사단 마크"
+                className="h-full w-full object-contain"
+              />
             </div>
 
+            {/* 기관명 */}
             <div className="min-w-0">
               <div className="truncate text-[8px] tracking-[2px] text-[#52657f] sm:text-[12px] sm:tracking-[4px]">
                 REPUBLIC OF KOREA
@@ -45,6 +49,7 @@ export default function ContractView({
             </div>
           </div>
 
+          {/* 오른쪽 문서 정보 */}
           <div className="shrink-0 text-right">
             <div className="text-[9px] tracking-[0.5px] text-[#52657f] sm:text-[13px] sm:tracking-[1px]">
               ELECTRONIC CONTRACT
@@ -57,7 +62,9 @@ export default function ContractView({
         </div>
       </header>
 
-      {/* 제목 */}
+      {/* =========================
+          제목
+      ========================= */}
       <section className="px-5 pb-8 pt-10 text-center sm:px-10 sm:pb-10 sm:pt-14">
         <div className="text-[8px] font-semibold tracking-[3px] text-[#52657f] sm:text-[12px] sm:tracking-[6px]">
           OFFICIAL ELECTRONIC DOCUMENT
@@ -70,7 +77,9 @@ export default function ContractView({
         <div className="mx-auto mt-5 h-[3px] w-[55px] bg-[#18283f] sm:mt-7 sm:w-[68px]" />
       </section>
 
-      {/* 계약 기본정보 */}
+      {/* =========================
+          계약 기본정보
+      ========================= */}
       <section className="px-5 sm:px-10 md:px-12">
         <div className="mb-3 flex items-end justify-between gap-3">
           <h2 className="text-[17px] font-bold text-[#111827] sm:text-[19px]">
@@ -84,6 +93,7 @@ export default function ContractView({
 
         <div className="border-t-2 border-[#18283f]">
           <div className="grid grid-cols-1 border-b border-[#cbd5e1] sm:grid-cols-2">
+            {/* 계약기관 */}
             <div className="border-b border-[#cbd5e1] px-4 py-4 sm:border-b-0 sm:border-r sm:px-5 sm:py-5">
               <div className="text-[11px] text-[#64748b] sm:text-[12px]">
                 계약기관
@@ -94,6 +104,7 @@ export default function ContractView({
               </div>
             </div>
 
+            {/* 계약상대자 */}
             <div className="px-4 py-4 sm:px-5 sm:py-5">
               <div className="text-[11px] text-[#64748b] sm:text-[12px]">
                 계약상대자
@@ -107,7 +118,9 @@ export default function ContractView({
         </div>
       </section>
 
-      {/* 계약 내용 */}
+      {/* =========================
+          계약 내용
+      ========================= */}
       <section className="px-5 pt-9 sm:px-10 sm:pt-12 md:px-12">
         <div className="mb-3 flex items-end justify-between gap-3">
           <h2 className="text-[17px] font-bold text-[#111827] sm:text-[19px]">
@@ -126,7 +139,9 @@ export default function ContractView({
         </div>
       </section>
 
-      {/* 계약상대자 서명 */}
+      {/* =========================
+          계약상대자 서명
+      ========================= */}
       <section className="px-5 pb-9 pt-9 sm:px-10 sm:pb-12 sm:pt-12 md:px-12">
         <div className="mb-3 flex items-end justify-between gap-3">
           <h2 className="text-[17px] font-bold text-[#111827] sm:text-[19px]">
@@ -157,6 +172,7 @@ export default function ContractView({
                 전자서명
               </span>
 
+              {/* 서명란 */}
               <div className="flex h-[58px] w-full max-w-[260px] items-center justify-center border-b border-[#475569] sm:w-[190px]">
                 {signature ? (
                   <img
@@ -171,6 +187,7 @@ export default function ContractView({
                 )}
               </div>
 
+              {/* 서명하기 */}
               {!completed && (
                 <button
                   type="button"
@@ -185,7 +202,9 @@ export default function ContractView({
         </div>
       </section>
 
-      {/* 계약 완료 */}
+      {/* =========================
+          계약 완료 버튼
+      ========================= */}
       {!completed && (
         <div className="px-5 pb-10 sm:px-10 sm:pb-14 md:px-12">
           <button
@@ -205,7 +224,9 @@ export default function ContractView({
         </div>
       )}
 
-      {/* 완료 상태 */}
+      {/* =========================
+          완료 상태
+      ========================= */}
       {completed && (
         <div className="mx-5 mb-10 border border-[#cbd5e1] bg-[#f8fafc] px-5 py-5 sm:mx-10 sm:mb-14 sm:px-6 md:mx-12">
           <div className="flex items-center justify-between gap-4">
@@ -226,24 +247,26 @@ export default function ContractView({
         </div>
       )}
 
-      {/* 하단 워터마크 + 하단 정보 */}
-      <footer className="relative overflow-hidden border-t border-[#cbd5e1] px-5 py-8 sm:px-10 sm:py-8 md:px-12">
-        {/* 37사단 워터마크 */}
+      {/* =========================
+          하단
+          37사단 로고 워터마크
+      ========================= */}
+      <footer className="relative overflow-hidden border-t border-[#cbd5e1] px-5 py-8 sm:px-10 sm:py-9 md:px-12">
+        {/* 로고 워터마크 */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center opacity-[0.06]"
+          className="pointer-events-none absolute bottom-[44px] left-1/2 -translate-x-1/2 opacity-[0.055]"
         >
-          <div className="flex h-[92px] w-[92px] items-center justify-center rounded-full border-[4px] border-[#18283f]">
-            <div className="flex h-[74px] w-[74px] items-center justify-center rounded-full border-[2px] border-[#18283f]">
-              <span className="text-[32px] font-bold text-[#18283f]">
-                37
-              </span>
-            </div>
-          </div>
+          <img
+            src="/37-logo.webp"
+            alt=""
+            className="h-[100px] w-[100px] object-contain sm:h-[135px] sm:w-[135px]"
+          />
         </div>
 
+        {/* 하단 문구 */}
         <div className="relative flex flex-col items-center gap-2 text-center text-[10px] leading-5 text-[#7b8798] sm:flex-row sm:items-center sm:justify-between sm:text-left">
-          <span>
+          <span className="break-keep">
             본 전자문서는 전자계약 시스템을 통해 작성되었습니다.
           </span>
 
