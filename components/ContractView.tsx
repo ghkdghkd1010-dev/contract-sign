@@ -20,7 +20,7 @@ export default function ContractView({
   onComplete,
 }: ContractViewProps) {
   return (
-    <div className="mx-auto w-full max-w-[1000px] overflow-hidden bg-white shadow-sm">
+    <div className="mx-auto w-full max-w-[1000px] overflow-x-hidden bg-white shadow-sm">
       {/* =========================
           상단 문서 헤더
       ========================= */}
@@ -248,24 +248,24 @@ export default function ContractView({
       )}
 
       {/* =========================
-          하단
-          37사단 로고 워터마크
+          하단 푸터
+          37사단 워터마크
       ========================= */}
-      <footer className="relative overflow-hidden border-t border-[#cbd5e1] px-5 py-8 sm:px-10 sm:py-9 md:px-12">
-        {/* 로고 워터마크 */}
+      <footer className="relative flex min-h-[120px] items-center overflow-hidden border-t border-[#cbd5e1] px-5 py-8 sm:min-h-[135px] sm:px-10 sm:py-9 md:px-12">
+        {/* 37사단 워터마크 */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute bottom-[44px] left-1/2 -translate-x-1/2 opacity-[0.055]"
+          className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-[0.045]"
         >
           <img
             src="/37-logo.webp"
             alt=""
-            className="h-[100px] w-[100px] object-contain sm:h-[135px] sm:w-[135px]"
+            className="h-[72px] w-[72px] object-contain sm:h-[90px] sm:w-[90px]"
           />
         </div>
 
-        {/* 하단 문구 */}
-        <div className="relative flex flex-col items-center gap-2 text-center text-[10px] leading-5 text-[#7b8798] sm:flex-row sm:items-center sm:justify-between sm:text-left">
+        {/* 하단 정보 */}
+        <div className="relative z-10 flex w-full flex-col items-center gap-2 text-center text-[10px] leading-5 text-[#7b8798] sm:flex-row sm:items-center sm:justify-between sm:text-left">
           <span className="break-keep">
             본 전자문서는 전자계약 시스템을 통해 작성되었습니다.
           </span>
