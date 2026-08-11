@@ -1,11 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 
 export default function NewContractPage() {
-  const router = useRouter();
-
   const [company, setCompany] = useState("");
   const [companyBusinessNumber, setCompanyBusinessNumber] = useState("");
 
@@ -40,7 +37,7 @@ export default function NewContractPage() {
 
 1. 계약 요청자
 기관/회사명: ${company}
-사업자등록번호: ${companyBusinessNumber}
+사업자등록번호: ${companyBusinessNumber || "-"}
 
 2. 계약 상대방
 업체명: ${contractor}
@@ -48,14 +45,18 @@ export default function NewContractPage() {
 
 3. 물품 정보
 품목명: ${productName}
-품목 상세정보: ${productSpec}
-수량: ${quantity}
-단가: ${unitPrice}원
+품목 상세정보: ${productSpec || "-"}
+수량: ${quantity || "-"}
+단가: ${
+        unitPrice
+          ? Number(unitPrice).toLocaleString()
+          : "-"
+      }원
 총 계약금액: ${totalAmount.toLocaleString()}원
 
 4. 납품 정보
-납품일자: ${deliveryDate}
-납품장소: ${deliveryAddress}
+납품일자: ${deliveryDate || "-"}
+납품장소: ${deliveryAddress || "-"}
 
 위 계약 내용을 확인하고 양 당사자는 본 계약에 동의합니다.
       `.trim();
@@ -84,18 +85,26 @@ export default function NewContractPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "계약 생성에 실패했습니다.");
+        throw new Error(
+          data.error || "계약 생성에 실패했습니다."
+        );
       }
 
-      if (!data.id) {
-        throw new Error("계약 ID를 받지 못했습니다.");
+      if (!data.public_token) {
+        throw new Error("계약 토큰을 받지 못했습니다.");
       }
+
+      const contractUrl =
+        `${window.location.origin}/contract/${data.public_token}`;
 
       alert(
-        `전자계약서가 생성되었습니다.\n\n상대방에게 보낼 링크:\nhttps://electronic-contract.co.kr/contract/${data.id}`
+        `전자계약서가 생성되었습니다.\n\n계약서 링크:\n${contractUrl}`
       );
 
-      router.push(`/contract/${data.id}`);
+      // 생성된 계약서 주소로 이동
+      window.location.href =
+        `/contract/${data.public_token}`;
+
     } catch (error) {
       console.error(error);
 
@@ -104,7 +113,7 @@ export default function NewContractPage() {
           ? error.message
           : "계약 생성 중 오류가 발생했습니다."
       );
-    } finally {
+
       setLoading(false);
     }
   };
@@ -112,6 +121,8 @@ export default function NewContractPage() {
   return (
     <main className="min-h-screen bg-[#f4f6f8] py-10 px-4">
       <div className="mx-auto max-w-[1000px] rounded-3xl bg-white px-10 py-12 shadow-sm">
+
+        {/* 제목 */}
         <div className="mb-12">
           <p className="mb-3 text-sm tracking-[0.3em] text-[#526b8b]">
             ELECTRONIC CONTRACT
@@ -126,11 +137,16 @@ export default function NewContractPage() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-12">
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-12"
+        >
+
           {/* 계약 요청자 */}
           <section>
             <div className="mb-5 flex items-center gap-3">
               <div className="h-9 w-1 bg-[#101827]" />
+
               <h2 className="text-2xl font-bold text-[#101827]">
                 계약 요청자
               </h2>
@@ -141,7 +157,9 @@ export default function NewContractPage() {
                 type="text"
                 placeholder="기관/회사명"
                 value={company}
-                onChange={(e) => setCompany(e.target.value)}
+                onChange={(e) =>
+                  setCompany(e.target.value)
+                }
                 className="w-full rounded-xl border border-[#cfd6df] px-5 py-4 text-lg outline-none transition focus:border-[#1d5eff]"
               />
 
@@ -161,6 +179,7 @@ export default function NewContractPage() {
           <section>
             <div className="mb-5 flex items-center gap-3">
               <div className="h-9 w-1 bg-[#101827]" />
+
               <h2 className="text-2xl font-bold text-[#101827]">
                 계약 상대방
               </h2>
@@ -171,13 +190,15 @@ export default function NewContractPage() {
                 type="text"
                 placeholder="업체명"
                 value={contractor}
-                onChange={(e) => setContractor(e.target.value)}
+                onChange={(e) =>
+                  setContractor(e.target.value)
+                }
                 className="w-full rounded-xl border border-[#cfd6df] px-5 py-4 text-lg outline-none transition focus:border-[#1d5eff]"
               />
 
               <input
                 type="text"
-                placeholder="사업자등록번호 (선택)"
+                placeholder="사업자등록번호"
                 value={contractorBusinessNumber}
                 onChange={(e) =>
                   setContractorBusinessNumber(e.target.value)
@@ -191,6 +212,7 @@ export default function NewContractPage() {
           <section>
             <div className="mb-5 flex items-center gap-3">
               <div className="h-9 w-1 bg-[#101827]" />
+
               <h2 className="text-2xl font-bold text-[#101827]">
                 물품 정보
               </h2>
@@ -201,14 +223,18 @@ export default function NewContractPage() {
                 type="text"
                 placeholder="품목명"
                 value={productName}
-                onChange={(e) => setProductName(e.target.value)}
+                onChange={(e) =>
+                  setProductName(e.target.value)
+                }
                 className="w-full rounded-xl border border-[#cfd6df] px-5 py-4 text-lg outline-none transition focus:border-[#1d5eff]"
               />
 
               <textarea
                 placeholder="품목 상세정보"
                 value={productSpec}
-                onChange={(e) => setProductSpec(e.target.value)}
+                onChange={(e) =>
+                  setProductSpec(e.target.value)
+                }
                 rows={4}
                 className="w-full resize-none rounded-xl border border-[#cfd6df] px-5 py-4 text-lg outline-none transition focus:border-[#1d5eff]"
               />
@@ -218,7 +244,9 @@ export default function NewContractPage() {
                   type="number"
                   placeholder="수량"
                   value={quantity}
-                  onChange={(e) => setQuantity(e.target.value)}
+                  onChange={(e) =>
+                    setQuantity(e.target.value)
+                  }
                   className="w-full rounded-xl border border-[#cfd6df] px-5 py-4 text-lg outline-none transition focus:border-[#1d5eff]"
                 />
 
@@ -226,7 +254,9 @@ export default function NewContractPage() {
                   type="number"
                   placeholder="단가"
                   value={unitPrice}
-                  onChange={(e) => setUnitPrice(e.target.value)}
+                  onChange={(e) =>
+                    setUnitPrice(e.target.value)
+                  }
                   className="w-full rounded-xl border border-[#cfd6df] px-5 py-4 text-lg outline-none transition focus:border-[#1d5eff]"
                 />
               </div>
@@ -249,6 +279,7 @@ export default function NewContractPage() {
           <section>
             <div className="mb-5 flex items-center gap-3">
               <div className="h-9 w-1 bg-[#101827]" />
+
               <h2 className="text-2xl font-bold text-[#101827]">
                 납품 정보
               </h2>
@@ -258,7 +289,9 @@ export default function NewContractPage() {
               <input
                 type="date"
                 value={deliveryDate}
-                onChange={(e) => setDeliveryDate(e.target.value)}
+                onChange={(e) =>
+                  setDeliveryDate(e.target.value)
+                }
                 className="w-full rounded-xl border border-[#cfd6df] px-5 py-4 text-lg outline-none transition focus:border-[#1d5eff]"
               />
 
@@ -280,8 +313,11 @@ export default function NewContractPage() {
             disabled={loading}
             className="w-full rounded-xl bg-[#2161ff] py-5 text-2xl font-bold text-white transition hover:bg-[#164ed8] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {loading ? "계약서 생성 중..." : "계약 생성"}
+            {loading
+              ? "계약서 생성 중..."
+              : "계약 생성"}
           </button>
+
         </form>
       </div>
     </main>
