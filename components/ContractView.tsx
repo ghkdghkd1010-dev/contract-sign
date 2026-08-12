@@ -88,21 +88,10 @@ export default function ContractView({
   const canSign = agreementChecked && specialChecked;
 
   /*
-   * contractText에는 다음과 같은 구조로 저장되어 있음:
+   * contractText에는 계약조건과 계약물품 정보가 함께 저장되어 있음.
    *
-   * 물품 납품 계약서
-   *
-   * 제1조 ...
-   * 제2조 ...
-   * ...
-   * 제11조 ...
-   *
-   * [계약 물품]
-   *
-   * 품목명: ...
-   *
-   * 따라서 [계약 물품] 이전까지만 잘라서
-   * 제1조~제11조를 화면에 표시한다.
+   * [계약 물품] 이전까지는 제1조~제11조의 계약조건이며,
+   * 화면에서는 계약조건 영역에 표시한다.
    */
   const contractClauses = contractText
     ? contractText.split("[계약 물품]")[0].trim()
@@ -241,9 +230,43 @@ export default function ContractView({
 
 
       {/* =========================================================
+          계약조건 / 제1조~제11조
+      ========================================================= */}
+      <section className="relative z-10 px-5 pt-9 sm:px-10 sm:pt-10 md:px-12">
+
+        <div className="mb-2 flex items-end justify-between gap-3">
+
+          <h2 className="text-[17px] font-bold text-[#111827] sm:text-[19px]">
+            계약조건
+          </h2>
+
+          <span className="hidden text-[11px] tracking-[2px] text-[#7b8798] sm:block">
+            CONTRACT TERMS
+          </span>
+
+        </div>
+
+        <div className="border-t-2 border-[#18283f] bg-[#fafbfd]">
+
+          {contractClauses ? (
+            <div className="whitespace-pre-wrap break-words px-5 py-6 text-[13px] leading-7 text-[#334155] sm:px-7 sm:py-7 sm:text-[14px]">
+              {contractClauses}
+            </div>
+          ) : (
+            <div className="px-5 py-6 text-[13px] text-[#94a3b8] sm:px-7 sm:py-7">
+              계약조건이 없습니다.
+            </div>
+          )}
+
+        </div>
+
+      </section>
+
+
+      {/* =========================================================
           계약 내용
       ========================================================= */}
-      <section className="relative z-10 px-5 pt-8 sm:px-10 sm:pt-9 md:px-12">
+      <section className="relative z-10 px-5 pt-9 sm:px-10 sm:pt-10 md:px-12">
 
         <div className="mb-2 flex items-end justify-between gap-3">
 
@@ -258,7 +281,7 @@ export default function ContractView({
         </div>
 
 
-        {/* 하나의 통합 표 */}
+        {/* 계약 내용 표 */}
         <div className="border-t-2 border-[#18283f]">
 
           {/* 제품명 */}
@@ -378,41 +401,6 @@ export default function ContractView({
 
 
       {/* =========================================================
-          ★ 계약조건 / 제1조~제11조
-      ========================================================= */}
-      <section className="relative z-10 px-5 pt-9 sm:px-10 sm:pt-10 md:px-12">
-
-        <div className="mb-2 flex items-end justify-between gap-3">
-
-          <h2 className="text-[17px] font-bold text-[#111827] sm:text-[19px]">
-            계약조건
-          </h2>
-
-          <span className="hidden text-[11px] tracking-[2px] text-[#7b8798] sm:block">
-            CONTRACT TERMS
-          </span>
-
-        </div>
-
-
-        <div className="border-t-2 border-[#18283f] bg-[#fafbfd]">
-
-          {contractClauses ? (
-            <div className="whitespace-pre-wrap break-words px-5 py-6 text-[13px] leading-7 text-[#334155] sm:px-7 sm:py-7 sm:text-[14px]">
-              {contractClauses}
-            </div>
-          ) : (
-            <div className="px-5 py-6 text-[13px] text-[#94a3b8] sm:px-7 sm:py-7">
-              계약조건이 없습니다.
-            </div>
-          )}
-
-        </div>
-
-      </section>
-
-
-      {/* =========================================================
           계약상대자 확인
       ========================================================= */}
       <section className="relative z-10 px-5 pt-8 sm:px-10 sm:pt-9 md:px-12">
@@ -435,10 +423,10 @@ export default function ContractView({
           <p className="text-[13px] leading-7 text-[#334155] sm:text-[14px]">
             본인은 본 계약서에 기재된{" "}
             <strong>
-              계약 당사자, 계약물품, 제품 상세설명, 수량, 계약금액,
-              납품조건 및 계약조건
+              계약 당사자, 계약 물품, 제품 상세 설명, 수량, 계약 금액,
+              납품 조건 및 계약 조건
             </strong>
-            을 모두 확인하였으며, 본 계약내용에 동의합니다.
+            을 모두 확인하였으며, 본 계약 내용에 동의합니다.
           </p>
 
 
@@ -457,7 +445,7 @@ export default function ContractView({
               />
 
               <span className="text-[13px] leading-6 text-[#1e293b] sm:text-[14px]">
-                계약내용을 모두 확인하였습니다.
+                계약 내용을 모두 확인하였습니다.
               </span>
 
             </label>
@@ -476,7 +464,7 @@ export default function ContractView({
               />
 
               <span className="text-[13px] leading-6 text-[#1e293b] sm:text-[14px]">
-                계약조건 및 특약사항을 확인하였습니다.
+                계약 조건 및 특약 사항을 확인하였습니다.
               </span>
 
             </label>
@@ -554,7 +542,7 @@ export default function ContractView({
 
                     if (!canSign) {
                       alert(
-                        "서명하기 전에 계약내용과 계약조건 및 특약사항을 모두 확인해주세요."
+                        "서명하기 전에 계약 내용과 계약 조건 및 특약 사항을 모두 확인해 주세요."
                       );
 
                       return;
@@ -595,7 +583,7 @@ export default function ContractView({
           >
             {signature
               ? "전자계약 완료"
-              : "전자서명 후 계약을 완료해주세요"}
+              : "전자서명 후 계약을 완료해 주세요"}
           </button>
 
         </div>
