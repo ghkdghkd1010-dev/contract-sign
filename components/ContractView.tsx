@@ -57,6 +57,80 @@ const formatDate = (value?: string | null) => {
   });
 };
 
+/*
+ * 계약서 문구의 띄어쓰기를 화면에서 통일한다.
+ * DB에 기존 문구가 저장되어 있어도 화면에서는
+ * 표준적인 띄어쓰기로 표시되도록 처리한다.
+ */
+const normalizeContractText = (text: string) => {
+  return text
+    .replace(/계약조건/g, "계약 조건")
+    .replace(/계약내용/g, "계약 내용")
+    .replace(/계약금액/g, "계약 금액")
+    .replace(/계약물품/g, "계약 물품")
+    .replace(/계약당사자/g, "계약 당사자")
+    .replace(/납품조건/g, "납품 조건")
+    .replace(/계약상 의무/g, "계약상의 의무")
+    .replace(/제품상세설명/g, "제품 상세 설명")
+    .replace(/대금지급/g, "대금 지급")
+    .replace(/지급조건/g, "지급 조건")
+    .replace(/제(\d+)조\s*\(/g, "제$1조(");
+};
+
+/*
+ * 계약 조문을 화면에서 보기 좋게 표시한다.
+ *
+ * 예:
+ * 제1조(목적)
+ * 제2조(계약 당사자)
+ *
+ * 조문 제목은 굵게 표시한다.
+ */
+const renderContractClauses = (text: string) => {
+  const normalized = normalizeContractText(text);
+
+  const clauses = normalized
+    .split(/(?=제\d+조\([^)]*\))/g)
+    .map((clause) => clause.trim())
+    .filter(Boolean);
+
+  return (
+    <div className="space-y-9">
+      {clauses.map((clause, index) => {
+        const match = clause.match(
+          /^(제\d+조\([^)]*\))([\s\S]*)$/
+        );
+
+        if (!match) {
+          return (
+            <div
+              key={index}
+              className="whitespace-pre-wrap break-words"
+            >
+              {clause}
+            </div>
+          );
+        }
+
+        const title = match[1];
+        const body = match[2].trim();
+
+        return (
+          <div key={index}>
+            <div className="mb-2 text-[14px] font-bold leading-7 text-[#243b5a] sm:text-[15px]">
+              {title}
+            </div>
+
+            <div className="whitespace-pre-wrap break-words text-[13px] leading-7 text-[#334155] sm:text-[14px]">
+              {body}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
 export default function ContractView({
   company,
   companyBusinessNumber,
@@ -88,10 +162,10 @@ export default function ContractView({
   const canSign = agreementChecked && specialChecked;
 
   /*
-   * contractText에는 계약조건과 계약물품 정보가 함께 저장되어 있음.
+   * contractText에는 계약 조건과 계약 물품 정보가 함께 저장되어 있음.
    *
-   * [계약 물품] 이전까지는 제1조~제11조의 계약조건이며,
-   * 화면에서는 계약조건 영역에 표시한다.
+   * [계약 물품] 이전까지는 제1조~제11조의 계약 조건이며,
+   * 화면에서는 계약 조건 영역에 표시한다.
    */
   const contractClauses = contractText
     ? contractText.split("[계약 물품]")[0].trim()
@@ -158,7 +232,7 @@ export default function ContractView({
         <div className="mx-auto mt-4 h-[3px] w-[55px] bg-[#18283f] sm:mt-5 sm:w-[68px]" />
 
         <p className="mt-3 text-[12px] text-[#64748b] sm:text-[13px]">
-          물품 납품 및 계약조건에 관한 전자계약 문서
+          물품 납품 및 계약 조건에 관한 전자계약 문서
         </p>
 
       </section>
@@ -170,6 +244,7 @@ export default function ContractView({
       <section className="relative z-10 px-5 sm:px-10 md:px-12">
 
         <div className="mb-2 flex items-end justify-between gap-3">
+
           <h2 className="text-[17px] font-bold text-[#111827] sm:text-[19px]">
             계약 기본정보
           </h2>
@@ -177,6 +252,7 @@ export default function ContractView({
           <span className="hidden text-[11px] tracking-[2px] text-[#7b8798] sm:block">
             CONTRACT INFORMATION
           </span>
+
         </div>
 
         <div className="border-t-2 border-[#18283f]">
@@ -230,14 +306,14 @@ export default function ContractView({
 
 
       {/* =========================================================
-          계약조건 / 제1조~제11조
+          계약 조건 / 제1조~제11조
       ========================================================= */}
       <section className="relative z-10 px-5 pt-9 sm:px-10 sm:pt-10 md:px-12">
 
         <div className="mb-2 flex items-end justify-between gap-3">
 
           <h2 className="text-[17px] font-bold text-[#111827] sm:text-[19px]">
-            계약조건
+            계약 조건
           </h2>
 
           <span className="hidden text-[11px] tracking-[2px] text-[#7b8798] sm:block">
@@ -246,15 +322,29 @@ export default function ContractView({
 
         </div>
 
-        <div className="border-t-2 border-[#18283f] bg-[#fafbfd]">
+
+        {/* 계약 조건 본문 + 워터마크 */}
+        <div className="relative overflow-hidden border-t-2 border-[#18283f] bg-[#fafbfd]">
+
+          {/* =====================================================
+              제37보병사단 워터마크
+              계약 조건 영역 중앙에 한 번만 표시
+          ===================================================== */}
+          <img
+            src="/37-logo.webp"
+            alt=""
+            aria-hidden="true"
+            className="pointer-events-none absolute left-1/2 top-1/2 z-0 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 object-contain opacity-[0.055]"
+          />
+
 
           {contractClauses ? (
-            <div className="whitespace-pre-wrap break-words px-5 py-6 text-[13px] leading-7 text-[#334155] sm:px-7 sm:py-7 sm:text-[14px]">
-              {contractClauses}
+            <div className="relative z-10 px-5 py-6 sm:px-7 sm:py-7">
+              {renderContractClauses(contractClauses)}
             </div>
           ) : (
-            <div className="px-5 py-6 text-[13px] text-[#94a3b8] sm:px-7 sm:py-7">
-              계약조건이 없습니다.
+            <div className="relative z-10 px-5 py-6 text-[13px] text-[#94a3b8] sm:px-7 sm:py-7">
+              계약 조건이 없습니다.
             </div>
           )}
 
@@ -298,11 +388,11 @@ export default function ContractView({
           </div>
 
 
-          {/* 제품 상세설명 */}
+          {/* 제품 상세 설명 */}
           <div className="grid grid-cols-1 border-b border-[#cbd5e1] sm:grid-cols-[180px_1fr]">
 
             <div className="bg-[#f8fafc] px-4 py-3.5 text-[12px] font-semibold text-[#475569] sm:px-5">
-              제품 상세설명
+              제품 상세 설명
             </div>
 
             <div className="whitespace-pre-wrap break-words px-4 py-3.5 text-[14px] leading-7 text-[#273449] sm:px-5">
@@ -340,11 +430,11 @@ export default function ContractView({
           </div>
 
 
-          {/* 총 계약금액 */}
+          {/* 총 계약 금액 */}
           <div className="grid grid-cols-1 border-b border-[#cbd5e1] sm:grid-cols-[180px_1fr]">
 
             <div className="bg-[#f8fafc] px-4 py-3.5 text-[12px] font-semibold text-[#475569] sm:px-5">
-              총 계약금액
+              총 계약 금액
             </div>
 
             <div className="px-4 py-3.5 text-[14px] font-bold text-[#18283f] sm:px-5">
@@ -382,11 +472,11 @@ export default function ContractView({
           </div>
 
 
-          {/* 대금 지급조건 */}
+          {/* 대금 지급 조건 */}
           <div className="grid grid-cols-1 sm:grid-cols-[180px_1fr]">
 
             <div className="bg-[#f8fafc] px-4 py-3.5 text-[12px] font-semibold text-[#475569] sm:px-5">
-              대금 지급조건
+              대금 지급 조건
             </div>
 
             <div className="px-4 py-3.5 text-[14px] font-medium text-[#273449] sm:px-5">
