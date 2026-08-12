@@ -214,7 +214,7 @@ export default function AdminPage() {
           </p>
 
           <a
-            href="/contract/new"
+            href="/contract/create"
             className="mt-4 inline-block rounded-lg bg-black px-5 py-3 text-sm font-semibold text-white"
           >
             계약서 생성하기

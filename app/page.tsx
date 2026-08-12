@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "@/lib/supabase";
 
 export default function HomePage() {
   const [company, setCompany] = useState("");
@@ -66,33 +65,53 @@ ${deliveryDate}
 ${deliveryAddress}
 `.trim();
 
-    const { data, error } = await supabase
-      .from("contract")
-      .insert({
-        company,
-        contractor,
-        contract_text: contractText,
-        status: "pending",
-      })
-      .select()
-      .single();
+    try {
+      const response = await fetch("/api/contract", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          company,
+          companyBusinessNumber,
+          contractor,
+          contractorBusinessNumber,
+          productName,
+          productSpec,
+          quantity,
+          unitPrice,
+          deliveryDate,
+          deliveryAddress,
+          contract_text: contractText,
+          status: "pending",
+        }),
+      });
 
-    setLoading(false);
+      const result = await response.json();
 
-    if (error) {
-      alert(error.message);
-      return;
+      if (!response.ok) {
+        alert(result.error || "계약문서 생성에 실패했습니다.");
+        return;
+      }
+
+      if (!result.public_token) {
+        alert("계약 토큰이 생성되지 않았습니다.");
+        return;
+      }
+
+      const contractUrl =
+        `${window.location.origin}/contract/${result.public_token}`;
+
+      alert(`계약문서가 생성되었습니다.\n\n${contractUrl}`);
+
+      window.location.href =
+        `/contract/${result.public_token}`;
+    } catch (error) {
+      console.error("계약 생성 오류:", error);
+      alert("계약문서 생성 중 오류가 발생했습니다.");
+    } finally {
+      setLoading(false);
     }
-
-    if (!data) {
-      alert("계약문서 생성에 실패했습니다.");
-      return;
-    }
-
-    const contractUrl =
-      `${window.location.origin}/contract/${data.id}`;
-
-    alert(`계약문서가 생성되었습니다.\n\n${contractUrl}`);
   };
 
   return (
@@ -100,7 +119,6 @@ ${deliveryAddress}
 
       <div className="mx-auto max-w-[1000px] overflow-hidden bg-white shadow-sm">
 
-        {/* 문서 헤더 */}
         <header className="border-b-[3px] border-[#18283f] px-8 py-6 sm:px-10">
 
           <div className="flex items-center justify-between">
@@ -133,7 +151,6 @@ ${deliveryAddress}
 
             </div>
 
-
             <div className="text-right">
 
               <div className="text-[12px] tracking-[1px] text-[#52657f]">
@@ -150,8 +167,6 @@ ${deliveryAddress}
 
         </header>
 
-
-        {/* 제목 */}
         <section className="px-8 pb-8 pt-10 sm:px-12">
 
           <div className="text-center">
@@ -170,11 +185,8 @@ ${deliveryAddress}
 
         </section>
 
-
-        {/* 작성 영역 */}
         <section className="px-8 pb-12 sm:px-12">
 
-          {/* 계약기관 */}
           <div className="mb-10">
 
             <div className="mb-3 flex items-end justify-between border-b-2 border-[#18283f] pb-3">
@@ -188,7 +200,6 @@ ${deliveryAddress}
               </span>
 
             </div>
-
 
             <div className="grid gap-3 sm:grid-cols-2">
 
@@ -212,8 +223,6 @@ ${deliveryAddress}
 
           </div>
 
-
-          {/* 계약상대자 */}
           <div className="mb-10">
 
             <div className="mb-3 flex items-end justify-between border-b-2 border-[#18283f] pb-3">
@@ -227,7 +236,6 @@ ${deliveryAddress}
               </span>
 
             </div>
-
 
             <div className="grid gap-3 sm:grid-cols-2">
 
@@ -251,8 +259,6 @@ ${deliveryAddress}
 
           </div>
 
-
-          {/* 계약 대상 */}
           <div className="mb-10">
 
             <div className="mb-3 flex items-end justify-between border-b-2 border-[#18283f] pb-3">
@@ -266,7 +272,6 @@ ${deliveryAddress}
               </span>
 
             </div>
-
 
             <div className="space-y-3">
 
@@ -304,8 +309,6 @@ ${deliveryAddress}
 
               </div>
 
-
-              {/* 총액 */}
               <div className="mt-4 flex items-center justify-between border border-[#cbd5e1] bg-[#f8fafc] px-5 py-4">
 
                 <span className="text-[13px] text-[#64748b]">
@@ -322,8 +325,6 @@ ${deliveryAddress}
 
           </div>
 
-
-          {/* 납품 정보 */}
           <div className="mb-10">
 
             <div className="mb-3 flex items-end justify-between border-b-2 border-[#18283f] pb-3">
@@ -337,7 +338,6 @@ ${deliveryAddress}
               </span>
 
             </div>
-
 
             <div className="grid gap-3 sm:grid-cols-2">
 
@@ -359,8 +359,6 @@ ${deliveryAddress}
 
           </div>
 
-
-          {/* 생성 버튼 */}
           <button
             type="button"
             onClick={createContract}
@@ -372,8 +370,6 @@ ${deliveryAddress}
 
         </section>
 
-
-        {/* 하단 */}
         <footer className="border-t border-[#cbd5e1] px-8 py-5 sm:px-12">
 
           <div className="flex flex-col gap-2 text-[10px] text-[#94a3b8] sm:flex-row sm:items-center sm:justify-between">

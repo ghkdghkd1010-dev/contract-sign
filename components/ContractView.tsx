@@ -2,33 +2,96 @@
 
 type ContractViewProps = {
   company: string;
+  companyBusinessNumber?: string;
   contractor: string;
+  contractorBusinessNumber?: string;
+
   contractText: string;
+
+  productName?: string;
+  productDescription?: string;
+  quantity?: number | null;
+  unitPrice?: number | null;
+  totalPrice?: number | null;
+  deliveryDate?: string | null;
+  deliveryAddress?: string;
+
   signature: string;
   completed: boolean;
+
+  agreementChecked: boolean;
+  specialChecked: boolean;
+
+  onAgreementChange: (checked: boolean) => void;
+  onSpecialChange: (checked: boolean) => void;
+
   onSign: () => void;
   onComplete: () => void;
 };
 
+const formatMoney = (value?: number | null) => {
+  if (value === null || value === undefined || Number.isNaN(value)) {
+    return "-";
+  }
+
+  return `${Number(value).toLocaleString("ko-KR")}원`;
+};
+
+const formatDate = (value?: string | null) => {
+  if (!value) return "-";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return date.toLocaleDateString("ko-KR", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+};
+
 export default function ContractView({
   company,
+  companyBusinessNumber,
   contractor,
+  contractorBusinessNumber,
+
   contractText,
+
+  productName,
+  productDescription,
+  quantity,
+  unitPrice,
+  totalPrice,
+  deliveryDate,
+  deliveryAddress,
+
   signature,
   completed,
+
+  agreementChecked,
+  specialChecked,
+
+  onAgreementChange,
+  onSpecialChange,
+
   onSign,
   onComplete,
 }: ContractViewProps) {
+  const canSign = agreementChecked && specialChecked;
+
   return (
     <div className="relative mx-auto w-full max-w-[1000px] overflow-hidden bg-white shadow-sm">
       {/* =========================================================
-          상단 문서 헤더
+          문서 헤더
       ========================================================= */}
-      <header className="relative z-10 border-b-[3px] border-[#18283f] px-5 py-6 sm:px-8 sm:py-7 md:px-10">
+      <header className="relative z-10 border-b-[3px] border-[#18283f] px-5 py-5 sm:px-8 sm:py-6 md:px-10">
         <div className="flex items-start justify-between gap-4">
-          {/* 좌측 로고 + 사단명 */}
+          {/* 좌측 */}
           <div className="flex min-w-0 items-center gap-3 sm:gap-4">
-            {/* 37사단 실제 로고 */}
             <div className="flex h-[52px] w-[52px] shrink-0 items-center justify-center sm:h-[68px] sm:w-[68px]">
               <img
                 src="/37-logo.webp"
@@ -48,7 +111,7 @@ export default function ContractView({
             </div>
           </div>
 
-          {/* 우측 문서 종류 */}
+          {/* 우측 */}
           <div className="shrink-0 text-right">
             <div className="text-[9px] tracking-[0.5px] text-[#52657f] sm:text-[13px] sm:tracking-[1px]">
               ELECTRONIC CONTRACT
@@ -64,23 +127,27 @@ export default function ContractView({
       {/* =========================================================
           제목
       ========================================================= */}
-      <section className="relative z-10 px-5 pb-8 pt-10 text-center sm:px-10 sm:pb-10 sm:pt-14">
+      <section className="relative z-10 px-5 pb-6 pt-8 text-center sm:px-10 sm:pb-8 sm:pt-10">
         <div className="text-[8px] font-semibold tracking-[3px] text-[#52657f] sm:text-[12px] sm:tracking-[6px]">
           OFFICIAL ELECTRONIC DOCUMENT
         </div>
 
-        <h1 className="mt-4 text-[30px] font-bold tracking-[4px] text-[#111827] sm:mt-5 sm:text-[42px] sm:tracking-[8px]">
-          계약문서
+        <h1 className="mt-3 text-[30px] font-bold tracking-[4px] text-[#111827] sm:mt-4 sm:text-[42px] sm:tracking-[8px]">
+          물품 납품 계약서
         </h1>
 
-        <div className="mx-auto mt-5 h-[3px] w-[55px] bg-[#18283f] sm:mt-7 sm:w-[68px]" />
+        <div className="mx-auto mt-4 h-[3px] w-[55px] bg-[#18283f] sm:mt-5 sm:w-[68px]" />
+
+        <p className="mt-3 text-[12px] text-[#64748b] sm:text-[13px]">
+          물품 납품 및 계약조건에 관한 전자계약 문서
+        </p>
       </section>
 
       {/* =========================================================
           계약 기본정보
       ========================================================= */}
       <section className="relative z-10 px-5 sm:px-10 md:px-12">
-        <div className="mb-3 flex items-end justify-between gap-3">
+        <div className="mb-2 flex items-end justify-between gap-3">
           <h2 className="text-[17px] font-bold text-[#111827] sm:text-[19px]">
             계약 기본정보
           </h2>
@@ -91,77 +158,242 @@ export default function ContractView({
         </div>
 
         <div className="border-t-2 border-[#18283f]">
-          <div className="grid grid-cols-1 border-b border-[#cbd5e1] sm:grid-cols-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2">
             {/* 계약기관 */}
-            <div className="border-b border-[#cbd5e1] px-4 py-4 sm:border-b-0 sm:border-r sm:px-5 sm:py-5">
+            <div className="border-b border-[#cbd5e1] px-4 py-4 sm:border-b-0 sm:border-r sm:px-5">
               <div className="text-[11px] text-[#64748b] sm:text-[12px]">
-                계약기관
+                계약기관(갑)
               </div>
 
-              <div className="mt-2 break-words text-[15px] font-semibold leading-6 text-[#111827] sm:text-[16px]">
+              <div className="mt-1.5 text-[15px] font-semibold text-[#111827] sm:text-[16px]">
                 {company || "-"}
               </div>
+
+              {companyBusinessNumber && (
+                <div className="mt-1.5 text-[12px] text-[#64748b]">
+                  사업자등록번호: {companyBusinessNumber}
+                </div>
+              )}
             </div>
 
             {/* 계약상대자 */}
-            <div className="px-4 py-4 sm:px-5 sm:py-5">
+            <div className="border-b border-[#cbd5e1] px-4 py-4 sm:border-b-0 sm:px-5">
               <div className="text-[11px] text-[#64748b] sm:text-[12px]">
-                계약상대자
+                계약상대자(을)
               </div>
 
-              <div className="mt-2 break-words text-[15px] font-semibold leading-6 text-[#111827] sm:text-[16px]">
+              <div className="mt-1.5 text-[15px] font-semibold text-[#111827] sm:text-[16px]">
                 {contractor || "-"}
               </div>
+
+              {contractorBusinessNumber && (
+                <div className="mt-1.5 text-[12px] text-[#64748b]">
+                  사업자등록번호: {contractorBusinessNumber}
+                </div>
+              )}
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* =========================================================
+          계약 조건 / 조항
+      ========================================================= */}
+      <section className="relative z-10 px-5 pt-8 sm:px-10 sm:pt-9 md:px-12">
+        <div className="mb-2 flex items-end justify-between gap-3">
+          <h2 className="text-[17px] font-bold text-[#111827] sm:text-[19px]">
+            계약조건 및 조항
+          </h2>
+
+          <span className="hidden text-[11px] tracking-[2px] text-[#7b8798] sm:block">
+            TERMS & CONDITIONS
+          </span>
+        </div>
+
+        <div className="relative overflow-hidden border-t-2 border-[#18283f]">
+          {/* 워터마크 */}
+          <img
+            src="/37-logo.webp"
+            alt=""
+            aria-hidden="true"
+            className="pointer-events-none absolute left-1/2 top-[48%] z-0 h-[430px] w-[430px] -translate-x-1/2 -translate-y-1/2 object-contain opacity-[0.055] sm:h-[520px] sm:w-[520px] md:h-[600px] md:w-[600px]"
+          />
+
+          <div className="relative z-10 whitespace-pre-wrap break-words px-4 py-5 text-[13px] leading-7 text-[#273449] sm:px-6 sm:py-6 sm:text-[14px] sm:leading-8">
+            {contractText || "계약조건이 없습니다."}
           </div>
         </div>
       </section>
 
       {/* =========================================================
           계약 내용
-          워터마크가 이 영역을 중심으로 은은하게 보이도록 구성
       ========================================================= */}
-      <section className="relative z-10 px-5 pt-9 sm:px-10 sm:pt-12 md:px-12">
-        <div className="mb-3 flex items-end justify-between gap-3">
+      <section className="relative z-10 px-5 pt-8 sm:px-10 sm:pt-9 md:px-12">
+        <div className="mb-2 flex items-end justify-between gap-3">
           <h2 className="text-[17px] font-bold text-[#111827] sm:text-[19px]">
             계약 내용
           </h2>
 
           <span className="hidden text-[11px] tracking-[2px] text-[#7b8798] sm:block">
-            CONTRACT DOCUMENT
+            CONTRACT DETAILS
           </span>
         </div>
 
         <div className="border-t-2 border-[#18283f]">
-          <div className="relative overflow-hidden">
-            {/* =====================================================
-                37사단 워터마크
-                - opacity 0.08
-                - 기존보다 조금 위쪽
-                - 문서 정중앙보다 살짝 아래
-            ===================================================== */}
-            <img
-              src="/37-logo.webp"
-              alt=""
-              aria-hidden="true"
-              className="pointer-events-none absolute left-1/2 top-[55%] z-0 h-[430px] w-[430px] -translate-x-1/2 -translate-y-1/2 object-contain opacity-[0.08] sm:h-[500px] sm:w-[500px] md:h-[560px] md:w-[560px]"
-            />
+          {/* 제품명 */}
+          <div className="grid grid-cols-1 border-b border-[#cbd5e1] sm:grid-cols-[180px_1fr]">
+            <div className="bg-[#f8fafc] px-4 py-3.5 text-[12px] font-semibold text-[#475569] sm:px-5">
+              제품명
+            </div>
 
-            {/* 실제 계약 내용 */}
-            <div className="relative z-10 min-h-[220px] whitespace-pre-wrap break-words px-4 py-5 text-[14px] leading-7 text-[#273449] sm:min-h-[280px] sm:px-6 sm:py-7 sm:text-[15px] sm:leading-8">
-              {contractText || "계약 내용이 없습니다."}
+            <div className="px-4 py-3.5 text-[14px] font-semibold text-[#111827] sm:px-5">
+              {productName || "-"}
+            </div>
+          </div>
+
+          {/* 제품 상세설명 */}
+          <div className="grid grid-cols-1 border-b border-[#cbd5e1] sm:grid-cols-[180px_1fr]">
+            <div className="bg-[#f8fafc] px-4 py-3.5 text-[12px] font-semibold text-[#475569] sm:px-5">
+              제품 상세설명
+            </div>
+
+            <div className="whitespace-pre-wrap break-words px-4 py-3.5 text-[14px] leading-7 text-[#273449] sm:px-5">
+              {productDescription || "-"}
+            </div>
+          </div>
+
+          {/* 수량 / 단가 / 금액 */}
+          <div className="grid grid-cols-1 sm:grid-cols-3">
+            <div className="grid grid-cols-[100px_1fr] border-b border-[#cbd5e1] sm:block sm:border-b-0 sm:border-r">
+              <div className="bg-[#f8fafc] px-4 py-3 text-[12px] font-semibold text-[#475569] sm:border-b sm:border-[#cbd5e1] sm:px-5">
+                수량
+              </div>
+
+              <div className="px-4 py-3 text-[14px] text-[#111827] sm:px-5">
+                {quantity ?? "-"}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-[100px_1fr] border-b border-[#cbd5e1] sm:block sm:border-b-0 sm:border-r">
+              <div className="bg-[#f8fafc] px-4 py-3 text-[12px] font-semibold text-[#475569] sm:border-b sm:border-[#cbd5e1] sm:px-5">
+                단가
+              </div>
+
+              <div className="px-4 py-3 text-[14px] text-[#111827] sm:px-5">
+                {formatMoney(unitPrice)}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-[100px_1fr] sm:block">
+              <div className="bg-[#f8fafc] px-4 py-3 text-[12px] font-semibold text-[#475569] sm:border-b sm:border-[#cbd5e1] sm:px-5">
+                총 계약금액
+              </div>
+
+              <div className="px-4 py-3 text-[14px] font-bold text-[#18283f] sm:px-5">
+                {formatMoney(totalPrice)}
+              </div>
+            </div>
+          </div>
+
+          {/* 납품조건 */}
+          <div className="grid grid-cols-1 border-t border-[#cbd5e1] sm:grid-cols-2">
+            <div className="grid grid-cols-[100px_1fr] border-b border-[#cbd5e1] sm:block sm:border-b-0 sm:border-r">
+              <div className="bg-[#f8fafc] px-4 py-3 text-[12px] font-semibold text-[#475569] sm:border-b sm:border-[#cbd5e1] sm:px-5">
+                납품일자
+              </div>
+
+              <div className="px-4 py-3 text-[14px] text-[#111827] sm:px-5">
+                {formatDate(deliveryDate)}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-[100px_1fr] sm:block">
+              <div className="bg-[#f8fafc] px-4 py-3 text-[12px] font-semibold text-[#475569] sm:border-b sm:border-[#cbd5e1] sm:px-5">
+                납품장소
+              </div>
+
+              <div className="px-4 py-3 text-[14px] text-[#111827] sm:px-5">
+                {deliveryAddress || "-"}
+              </div>
+            </div>
+          </div>
+
+          {/* 계약방법 */}
+          <div className="grid grid-cols-1 border-t border-[#cbd5e1] sm:grid-cols-[180px_1fr]">
+            <div className="bg-[#f8fafc] px-4 py-3.5 text-[12px] font-semibold text-[#475569] sm:px-5">
+              계약방법
+            </div>
+
+            <div className="px-4 py-3.5 text-[14px] text-[#273449] sm:px-5">
+              검수 후 대금 지급
             </div>
           </div>
         </div>
       </section>
 
       {/* =========================================================
-          계약상대자 서명
+          계약상대자 확인
       ========================================================= */}
-      <section className="relative z-10 px-5 pb-9 pt-9 sm:px-10 sm:pb-12 sm:pt-12 md:px-12">
-        <div className="mb-3 flex items-end justify-between gap-3">
+      <section className="relative z-10 px-5 pt-8 sm:px-10 sm:pt-9 md:px-12">
+        <div className="mb-2 flex items-end justify-between gap-3">
           <h2 className="text-[17px] font-bold text-[#111827] sm:text-[19px]">
-            계약상대자
+            계약상대자 확인
+          </h2>
+
+          <span className="hidden text-[11px] tracking-[2px] text-[#7b8798] sm:block">
+            CONTRACT CONFIRMATION
+          </span>
+        </div>
+
+        <div className="border-t-2 border-[#18283f] bg-[#fafbfd] px-5 py-5 sm:px-7 sm:py-6">
+          <p className="text-[13px] leading-7 text-[#334155] sm:text-[14px]">
+            본인은 본 계약서에 기재된{" "}
+            <strong>
+              계약 당사자, 계약물품, 제품 상세설명, 수량, 계약금액,
+              납품조건 및 계약조건
+            </strong>
+            을 모두 확인하였으며, 본 계약내용에 동의합니다.
+          </p>
+
+          <div className="mt-5 space-y-3.5">
+            {/* 첫 번째 체크 */}
+            <label className="flex cursor-pointer items-start gap-3">
+              <input
+                type="checkbox"
+                checked={agreementChecked}
+                onChange={(e) => onAgreementChange(e.target.checked)}
+                className="mt-[3px] h-[18px] w-[18px] shrink-0 cursor-pointer accent-[#18283f]"
+              />
+
+              <span className="text-[13px] leading-6 text-[#1e293b] sm:text-[14px]">
+                계약내용을 모두 확인하였습니다.
+              </span>
+            </label>
+
+            {/* 두 번째 체크 */}
+            <label className="flex cursor-pointer items-start gap-3">
+              <input
+                type="checkbox"
+                checked={specialChecked}
+                onChange={(e) => onSpecialChange(e.target.checked)}
+                className="mt-[3px] h-[18px] w-[18px] shrink-0 cursor-pointer accent-[#18283f]"
+              />
+
+              <span className="text-[13px] leading-6 text-[#1e293b] sm:text-[14px]">
+                계약조건 및 특약사항을 확인하였습니다.
+              </span>
+            </label>
+          </div>
+        </div>
+      </section>
+
+      {/* =========================================================
+          서명
+      ========================================================= */}
+      <section className="relative z-10 px-5 pb-7 pt-8 sm:px-10 sm:pb-9 sm:pt-9 md:px-12">
+        <div className="mb-2 flex items-end justify-between gap-3">
+          <h2 className="text-[17px] font-bold text-[#111827] sm:text-[19px]">
+            계약상대자 전자서명
           </h2>
 
           <span className="hidden text-[11px] tracking-[2px] text-[#7b8798] sm:block">
@@ -170,33 +402,31 @@ export default function ContractView({
         </div>
 
         <div className="border-t-2 border-[#18283f]">
-          <div className="flex flex-col gap-5 border-b border-[#cbd5e1] px-4 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-            {/* 업체 */}
+          <div className="flex flex-col gap-4 px-4 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-5">
             <div className="min-w-0">
               <div className="text-[10px] tracking-[2px] text-[#64748b] sm:text-[11px]">
                 CONTRACTOR
               </div>
 
-              <div className="mt-1 break-words text-[15px] font-bold leading-6 text-[#111827] sm:text-[16px]">
+              <div className="mt-1 break-words text-[15px] font-bold text-[#111827] sm:text-[16px]">
                 {contractor || "-"}
               </div>
             </div>
 
-            {/* 서명 영역 */}
             <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center sm:gap-4">
-              <span className="text-[12px] text-[#64748b] sm:text-[13px]">
+              <span className="text-[12px] text-[#64748b]">
                 전자서명
               </span>
 
-              <div className="flex h-[58px] w-full max-w-[260px] items-center justify-center border-b border-[#475569] sm:w-[190px]">
+              <div className="flex h-[60px] w-full max-w-[260px] items-center justify-center border-b border-[#475569] sm:w-[210px]">
                 {signature ? (
                   <img
                     src={signature}
                     alt="계약상대자 전자서명"
-                    className="max-h-[48px] max-w-[90%] object-contain"
+                    className="max-h-[50px] max-w-[90%] object-contain"
                   />
                 ) : (
-                  <span className="text-[12px] text-[#94a3b8] sm:text-[13px]">
+                  <span className="text-[12px] text-[#94a3b8]">
                     서명란
                   </span>
                 )}
@@ -205,8 +435,17 @@ export default function ContractView({
               {!completed && (
                 <button
                   type="button"
-                  onClick={onSign}
-                  className="w-full rounded-md bg-[#18283f] px-5 py-3 text-[13px] font-semibold text-white transition hover:bg-[#263a57] sm:w-auto sm:py-2.5"
+                  onClick={() => {
+                    if (!canSign) {
+                      alert(
+                        "서명하기 전에 계약내용과 계약조건 및 특약사항을 모두 확인해주세요."
+                      );
+                      return;
+                    }
+
+                    onSign();
+                  }}
+                  className="w-full rounded-md bg-[#18283f] px-5 py-3 text-[13px] font-semibold text-white transition hover:bg-[#263a57] sm:w-auto"
                 >
                   {signature ? "서명 수정" : "서명하기"}
                 </button>
@@ -217,10 +456,10 @@ export default function ContractView({
       </section>
 
       {/* =========================================================
-          계약 완료 버튼
+          계약 완료
       ========================================================= */}
       {!completed && (
-        <div className="relative z-10 px-5 pb-10 sm:px-10 sm:pb-14 md:px-12">
+        <div className="relative z-10 px-5 pb-8 sm:px-10 sm:pb-10 md:px-12">
           <button
             type="button"
             onClick={onComplete}
@@ -242,15 +481,15 @@ export default function ContractView({
           완료 상태
       ========================================================= */}
       {completed && (
-        <div className="relative z-10 mx-5 mb-10 border border-[#cbd5e1] bg-[#f8fafc] px-5 py-5 sm:mx-10 sm:mb-14 sm:px-6 md:mx-12">
+        <div className="relative z-10 mx-5 mb-8 border border-[#cbd5e1] bg-[#f8fafc] px-5 py-5 sm:mx-10 sm:mb-10 sm:px-6 md:mx-12">
           <div className="flex items-center justify-between gap-4">
-            <div className="min-w-0">
+            <div>
               <div className="text-[10px] tracking-[2px] text-[#64748b]">
-                CONTRACT STATUS
+                ELECTRONIC CONTRACT
               </div>
 
               <div className="mt-1 text-[15px] font-bold text-[#18283f] sm:text-[16px]">
-                전자계약 체결 완료
+                전자서명이 완료되었습니다.
               </div>
             </div>
 
@@ -264,8 +503,8 @@ export default function ContractView({
       {/* =========================================================
           하단
       ========================================================= */}
-      <footer className="relative z-10 overflow-hidden border-t border-[#cbd5e1] px-5 py-8 sm:px-10 sm:py-8 md:px-12">
-        <div className="relative flex flex-col items-center gap-2 text-center text-[10px] leading-5 text-[#7b8798] sm:flex-row sm:items-center sm:justify-between sm:text-left">
+      <footer className="relative z-10 border-t border-[#cbd5e1] px-5 py-7 sm:px-10 md:px-12">
+        <div className="flex flex-col items-center justify-between gap-2 text-center text-[10px] leading-5 text-[#7b8798] sm:flex-row sm:text-left">
           <span>
             본 전자문서는 전자계약 시스템을 통해 작성되었습니다.
           </span>
