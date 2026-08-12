@@ -87,9 +87,28 @@ export default function ContractView({
 }: ContractViewProps) {
   const canSign = agreementChecked && specialChecked;
 
+  /*
+   * [계약 물품] 이전까지를 계약 조건으로 사용
+   */
   const contractClauses = contractText
     ? contractText.split("[계약 물품]")[0].trim()
     : "";
+
+  /*
+   * 계약 조건을 제1조, 제2조 ... 단위로 분리
+   *
+   * 예:
+   * 제1조 (목적)
+   * 제2조 (계약 당사자)
+   *
+   * 를 각각 하나의 조문으로 분리한다.
+   */
+  const clauses = contractClauses
+    ? contractClauses
+        .split(/(?=제\d+조\s*\([^)]*\))/g)
+        .map((clause) => clause.trim())
+        .filter(Boolean)
+    : [];
 
   return (
     <div className="relative mx-auto w-full max-w-[1000px] overflow-hidden bg-white shadow-sm">
@@ -116,7 +135,7 @@ export default function ContractView({
               </div>
 
               <div className="mt-1 truncate text-[17px] font-bold text-[#111827] sm:text-[22px]">
-                제37보병사단
+                제 37보병사단
               </div>
             </div>
 
@@ -152,7 +171,7 @@ export default function ContractView({
         <div className="mx-auto mt-4 h-[3px] w-[55px] bg-[#18283f] sm:mt-5 sm:w-[68px]" />
 
         <p className="mt-3 text-[12px] text-[#64748b] sm:text-[13px]">
-          물품 납품 및 계약조건에 관한 전자계약 문서
+          물품 납품 및 계약 조건에 관한 전자계약 문서
         </p>
 
       </section>
@@ -164,6 +183,7 @@ export default function ContractView({
       <section className="relative z-10 px-5 sm:px-10 md:px-12">
 
         <div className="mb-2 flex items-end justify-between gap-3">
+
           <h2 className="text-[17px] font-bold text-[#111827] sm:text-[19px]">
             계약 기본정보
           </h2>
@@ -171,6 +191,7 @@ export default function ContractView({
           <span className="hidden text-[11px] tracking-[2px] text-[#7b8798] sm:block">
             CONTRACT INFORMATION
           </span>
+
         </div>
 
         <div className="border-t-2 border-[#18283f]">
@@ -224,7 +245,7 @@ export default function ContractView({
 
 
       {/* =========================================================
-          계약조건 / 제1조~제11조
+          계약 조건 / 제1조~제11조
       ========================================================= */}
       <section className="relative z-10 px-5 pt-9 sm:px-10 sm:pt-10 md:px-12">
 
@@ -241,12 +262,14 @@ export default function ContractView({
         </div>
 
 
-        {/* 계약조건 영역 */}
+        {/* =====================================================
+            계약 조건 영역
+        ===================================================== */}
         <div className="relative overflow-hidden border-t-2 border-[#18283f] bg-[#fafbfd]">
 
           {/* =====================================================
               워터마크
-              기존보다 약 8% 크게 설정
+              기존보다 약 8% 크게
           ===================================================== */}
           <div
             className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center overflow-hidden"
@@ -260,15 +283,75 @@ export default function ContractView({
           </div>
 
 
-          {/* 계약조건 본문 */}
-          <div className="relative z-10 whitespace-pre-wrap break-words px-5 py-6 text-[13.7px] leading-7 text-[#334155] sm:px-7 sm:py-7 sm:text-[14.7px]">
+          {/* =====================================================
+              계약 조건 본문
+          ===================================================== */}
+          <div className="relative z-10 px-5 py-6 sm:px-7 sm:py-7">
 
-            {contractClauses ? (
-              contractClauses
+            {clauses.length > 0 ? (
+
+              <div className="space-y-12">
+
+                {clauses.map((clause, index) => {
+
+                  /*
+                   * 조문 제목 추출
+                   *
+                   * 예:
+                   * 제1조 (목적)
+                   *
+                   * → 제1조(목적)
+                   */
+                  const titleMatch = clause.match(
+                    /^제(\d+)\s*조\s*\(([^)]+)\)\s*/
+                  );
+
+                  if (!titleMatch) {
+                    return (
+                      <div
+                        key={index}
+                        className="whitespace-pre-wrap break-words text-[13.7px] leading-7 text-[#334155] sm:text-[14.7px]"
+                      >
+                        {clause}
+                      </div>
+                    );
+                  }
+
+                  const articleNumber = titleMatch[1];
+                  const articleTitle = titleMatch[2];
+
+                  const body = clause
+                    .slice(titleMatch[0].length)
+                    .trim();
+
+                  return (
+                    <div key={index}>
+
+                      {/* 조문 제목 */}
+                      <div className="mb-3 text-[13.7px] font-bold leading-7 text-[#263a57] sm:text-[14.7px]">
+                        제{articleNumber}조({articleTitle})
+                      </div>
+
+
+                      {/* 조문 본문 */}
+                      {body && (
+                        <div className="whitespace-pre-wrap break-words text-[13.7px] leading-7 text-[#334155] sm:text-[14.7px]">
+                          {body}
+                        </div>
+                      )}
+
+                    </div>
+                  );
+                })}
+
+              </div>
+
             ) : (
-              <span className="text-[#94a3b8]">
+
+              <div className="text-[13.7px] text-[#94a3b8] sm:text-[14.7px]">
                 계약 조건이 없습니다.
-              </span>
+              </div>
+
             )}
 
           </div>
@@ -296,7 +379,6 @@ export default function ContractView({
         </div>
 
 
-        {/* 계약 내용 표 */}
         <div className="border-t-2 border-[#18283f]">
 
           {/* 제품명 */}
@@ -416,7 +498,7 @@ export default function ContractView({
 
 
       {/* =========================================================
-          계약상대자 확인
+          계약 상대자 확인
       ========================================================= */}
       <section className="relative z-10 px-5 pt-8 sm:px-10 sm:pt-9 md:px-12">
 
@@ -451,7 +533,6 @@ export default function ContractView({
 
           <div className="mt-5 space-y-3.5">
 
-            {/* 첫 번째 체크 */}
             <label className="flex cursor-pointer items-start gap-3">
 
               <input
@@ -470,7 +551,6 @@ export default function ContractView({
             </label>
 
 
-            {/* 두 번째 체크 */}
             <label className="flex cursor-pointer items-start gap-3">
 
               <input
@@ -601,8 +681,8 @@ export default function ContractView({
             }`}
           >
             {signature
-              ? "전자 계약 완료"
-              : "전자 서명 후 계약을 완료해 주세요"}
+              ? "전자계약 완료"
+              : "전자서명 후 계약을 완료해 주세요"}
           </button>
 
         </div>
@@ -624,7 +704,7 @@ export default function ContractView({
               </div>
 
               <div className="mt-1 text-[15px] font-bold text-[#18283f] sm:text-[16px]">
-                전자 서명이 완료되었습니다.
+                전자서명이 완료되었습니다.
               </div>
 
             </div>
