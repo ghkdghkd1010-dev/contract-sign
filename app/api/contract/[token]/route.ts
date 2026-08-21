@@ -12,7 +12,10 @@ type Params = {
   }>;
 };
 
+// ==========================================
 // 계약서 조회
+// ==========================================
+
 export async function GET(
   request: Request,
   { params }: Params
@@ -23,17 +26,19 @@ export async function GET(
     if (!token) {
       return NextResponse.json(
         {
-          error: "계약 토큰이 없습니다.",
+          error:
+            "계약 토큰이 없습니다.",
         },
         { status: 400 }
       );
     }
 
-    const { data, error } = await supabase
-      .from("contract")
-      .select("*")
-      .eq("public_token", token)
-      .maybeSingle();
+    const { data, error } =
+      await supabase
+        .from("contract")
+        .select("*")
+        .eq("public_token", token)
+        .maybeSingle();
 
     if (error) {
       console.error(
@@ -45,7 +50,9 @@ export async function GET(
         {
           error:
             "계약서 조회 중 오류가 발생했습니다.",
-          detail: error.message,
+
+          detail:
+            error.message,
         },
         { status: 500 }
       );
@@ -54,13 +61,15 @@ export async function GET(
     if (!data) {
       return NextResponse.json(
         {
-          error: "계약서를 찾을 수 없습니다.",
+          error:
+            "계약서를 찾을 수 없습니다.",
         },
         { status: 404 }
       );
     }
 
     return NextResponse.json(data);
+
   } catch (error) {
     console.error(
       "계약서 조회 예외:",
@@ -77,7 +86,10 @@ export async function GET(
   }
 }
 
+// ==========================================
 // 계약 완료 / 전자서명 저장
+// ==========================================
+
 export async function PATCH(
   request: Request,
   { params }: Params
@@ -88,7 +100,8 @@ export async function PATCH(
     if (!token) {
       return NextResponse.json(
         {
-          error: "계약 토큰이 없습니다.",
+          error:
+            "계약 토큰이 없습니다.",
         },
         { status: 400 }
       );
@@ -96,27 +109,75 @@ export async function PATCH(
 
     const body = await request.json();
 
-    const { signature } = body;
+    const {
+      signature,
+    } = body;
 
     if (!signature) {
       return NextResponse.json(
         {
-          error: "전자서명이 없습니다.",
+          error:
+            "전자서명이 없습니다.",
         },
         { status: 400 }
       );
     }
 
-    const { data, error } = await supabase
-      .from("contract")
-      .update({
-        signature,
-        status: "completed",
-        completed_at: new Date().toISOString(),
-      })
-      .eq("public_token", token)
-      .select("*")
-      .single();
+    // ==========================================
+    // 이미 완료된 계약인지 확인
+    // ==========================================
+
+    const { data: existing } =
+      await supabase
+        .from("contract")
+        .select("id, status")
+        .eq("public_token", token)
+        .maybeSingle();
+
+    if (!existing) {
+      return NextResponse.json(
+        {
+          error:
+            "계약서를 찾을 수 없습니다.",
+        },
+        { status: 404 }
+      );
+    }
+
+    if (
+      existing.status === "completed"
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "이미 완료된 계약입니다.",
+        },
+        { status: 400 }
+      );
+    }
+
+    // ==========================================
+    // 계약 완료
+    // ==========================================
+
+    const { data, error } =
+      await supabase
+        .from("contract")
+        .update({
+          signature,
+
+          status:
+            "completed",
+
+          completed_at:
+            new Date().toISOString(),
+        })
+        .eq(
+          "public_token",
+          token
+        )
+        .select("*")
+        .single();
 
     if (error) {
       console.error(
@@ -128,7 +189,9 @@ export async function PATCH(
         {
           error:
             "계약 완료 처리 중 오류가 발생했습니다.",
-          detail: error.message,
+
+          detail:
+            error.message,
         },
         { status: 500 }
       );
@@ -138,6 +201,7 @@ export async function PATCH(
       success: true,
       data,
     });
+
   } catch (error) {
     console.error(
       "계약 완료 예외:",
@@ -148,6 +212,7 @@ export async function PATCH(
       {
         error:
           "계약 완료 처리 중 오류가 발생했습니다.",
+
         detail:
           error instanceof Error
             ? error.message

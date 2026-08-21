@@ -6,6 +6,14 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+type ContractItemInput = {
+  id?: number;
+  productName?: string;
+  productSpec?: string;
+  quantity?: number;
+  unitPrice?: number;
+};
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -13,181 +21,286 @@ export async function POST(request: Request) {
     const {
       company,
       companyBusinessNumber,
+
       contractor,
       contractorBusinessNumber,
+
       items,
+
       deliveryDate,
       deliveryAddress,
+
       contract_text,
       status,
     } = body;
 
-    if (!company || !contractor || !items?.length) {
+    // =========================================================
+    // 기본 검증
+    // =========================================================
+
+    if (!company || !contractor) {
       return NextResponse.json(
         {
-          error: "회사명, 계약 상대방, 품목은 필수입니다.",
+          error:
+            "계약기관과 계약상대자는 필수 입력사항입니다.",
         },
         { status: 400 }
       );
     }
 
-    // 품목별 금액 계산
-    const processedItems = items.map((item: any) => {
-      const quantity = Number(item.quantity || 0);
-      const unitPrice = Number(item.unitPrice || 0);
+    if (!Array.isArray(items) || items.length === 0) {
+      return NextResponse.json(
+        {
+          error:
+            "계약 물품을 최소 1개 이상 입력해주세요.",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (!deliveryDate) {
+      return NextResponse.json(
+        {
+          error: "납품일자를 입력해주세요.",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (!deliveryAddress) {
+      return NextResponse.json(
+        {
+          error: "납품장소를 입력해주세요.",
+        },
+        { status: 400 }
+      );
+    }
+
+    // =========================================================
+    // 여러 품목 데이터 정리
+    // =========================================================
+
+    const normalizedItems = (
+      items as ContractItemInput[]
+    ).map((item, index) => {
+      const quantity = Number(item.quantity ?? 0);
+      const unitPrice = Number(item.unitPrice ?? 0);
+
+      // 제품명 검사
+      if (!item.productName?.trim()) {
+        throw new Error(
+          `${index + 1}번째 품목의 제품명이 없습니다.`
+        );
+      }
+
+      // 수량 검사
+      if (!Number.isFinite(quantity) || quantity <= 0) {
+        throw new Error(
+          `${index + 1}번째 품목의 수량이 올바르지 않습니다.`
+        );
+      }
+
+      // 단가 검사
+      if (!Number.isFinite(unitPrice) || unitPrice < 0) {
+        throw new Error(
+          `${index + 1}번째 품목의 단가가 올바르지 않습니다.`
+        );
+      }
 
       return {
-        product_name: item.productName || "",
-        product_spec: item.productSpec || null,
+        id:
+          typeof item.id === "number"
+            ? item.id
+            : index + 1,
+
+        productName:
+          item.productName.trim(),
+
+        productSpec:
+          item.productSpec?.trim() || "",
+
         quantity,
-        unit_price: unitPrice,
-        total_price: quantity * unitPrice,
+
+        unitPrice,
       };
     });
 
-    // 전체 계약금액
-    const totalPrice = processedItems.reduce(
-      (sum: number, item: any) =>
-        sum + Number(item.total_price || 0),
-      0
-    );
+    // =========================================================
+    // 전체 계약금액 계산
+    //
+    // 예:
+    // 품목1 = 100 × 10,000 = 1,000,000
+    // 품목2 = 50 × 20,000 = 1,000,000
+    //
+    // 총 계약금액 = 2,000,000
+    // =========================================================
 
-    // 계약 기본정보 저장
-    const { data: contract, error: contractError } =
-      await supabase
-        .from("contract")
-        .insert({
-          company,
-
-          company_business_number:
-            companyBusinessNumber || null,
-
-          contractor,
-
-          contractor_business_number:
-            contractorBusinessNumber || null,
-
-          // 기존 컬럼은 첫 번째 품목 기준으로 유지
-          product_name:
-            processedItems[0]?.product_name || null,
-
-          product_spec:
-            processedItems[0]?.product_spec || null,
-
-          quantity:
-            processedItems[0]?.quantity || null,
-
-          unit_price:
-            processedItems[0]?.unit_price || null,
-
-          total_price: totalPrice,
-
-          delivery_date:
-            deliveryDate || null,
-
-          delivery_address:
-            deliveryAddress || null,
-
-          contract_text:
-            contract_text || "",
-
-          status:
-            status || "pending",
-        })
-        .select("*")
-        .single();
-
-    if (contractError) {
-      console.error(
-        "CONTRACT INSERT ERROR:",
-        contractError
-      );
-
-      return NextResponse.json(
-        {
-          error: "계약 생성 중 오류가 발생했습니다.",
-          detail: contractError.message,
+    const totalPrice =
+      normalizedItems.reduce(
+        (sum, item) => {
+          return (
+            sum +
+            item.quantity * item.unitPrice
+          );
         },
-        { status: 500 }
+        0
       );
-    }
 
-    if (!contract) {
-      return NextResponse.json(
-        {
-          error: "계약 생성 결과를 확인할 수 없습니다.",
-        },
-        { status: 500 }
-      );
-    }
+    // =========================================================
+    // 기존 단일 품목 컬럼과의 호환
+    //
+    // 기존 ContractView가 아직 단일 품목 컬럼을
+    // 사용하는 경우를 대비해서 첫 번째 품목을 저장한다.
+    // =========================================================
 
-    // 여러 품목 저장
-    const itemRows = processedItems.map(
-      (item: any) => ({
-        contract_id: contract.id,
-        product_name: item.product_name,
-        product_spec: item.product_spec,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        total_price: item.total_price,
+    const firstItem =
+      normalizedItems[0];
+
+    // =========================================================
+    // 계약서 저장
+    // =========================================================
+
+    const { data, error } = await supabase
+      .from("contract")
+      .insert({
+        // 계약기관
+        company,
+
+        // 사업자등록번호
+        company_business:
+          companyBusinessNumber?.trim() || null,
+
+        // 계약상대자
+        contractor,
+
+        // 사업자등록번호
+        contractor_business:
+          contractorBusinessNumber?.trim() || null,
+
+        // =====================================================
+        // 여러 품목 전체
+        // JSONB 컬럼에 배열 형태로 저장
+        // =====================================================
+
+        items: normalizedItems,
+
+        // =====================================================
+        // 기존 단일 품목 컬럼
+        // 기존 DB / 기존 화면과의 호환용
+        // =====================================================
+
+        product_name:
+          firstItem?.productName || null,
+
+        product_spec:
+          firstItem?.productSpec || null,
+
+        quantity:
+          firstItem?.quantity ?? null,
+
+        unit_price:
+          firstItem?.unitPrice ?? null,
+
+        // =====================================================
+        // 전체 품목의 합계
+        // =====================================================
+
+        total_price:
+          totalPrice,
+
+        // =====================================================
+        // 납품 정보
+        // =====================================================
+
+        delivery_date:
+          deliveryDate || null,
+
+        delivery_address:
+          deliveryAddress || null,
+
+        // =====================================================
+        // 계약 조건
+        // =====================================================
+
+        contract_text:
+          contract_text || "",
+
+        // =====================================================
+        // 상태
+        // =====================================================
+
+        status:
+          status || "pending",
+
+        // =====================================================
+        // 공개 계약서 토큰
+        // =====================================================
+
+        public_token:
+          crypto.randomUUID(),
       })
-    );
+      .select("*")
+      .single();
 
-    const { error: itemsError } =
-      await supabase
-        .from("contract_items")
-        .insert(itemRows);
+    // =========================================================
+    // Supabase 저장 오류
+    // =========================================================
 
-    if (itemsError) {
+    if (error) {
       console.error(
-        "CONTRACT ITEMS INSERT ERROR:",
-        itemsError
+        "SUPABASE CONTRACT INSERT ERROR:",
+        error
       );
-
-      // 품목 저장 실패 시 계약도 삭제
-      await supabase
-        .from("contract")
-        .delete()
-        .eq("id", contract.id);
 
       return NextResponse.json(
         {
-          error: "계약 품목 저장 중 오류가 발생했습니다.",
-          detail: itemsError.message,
-        },
-        { status: 500 }
-      );
-    }
+          error:
+            "계약서 생성에 실패했습니다.",
 
-    if (!contract.public_token) {
-      return NextResponse.json(
-        {
-          error: "계약 토큰이 생성되지 않았습니다.",
           detail:
-            "public_token 컬럼의 기본값 또는 생성 설정을 확인해주세요.",
+            error.message,
+
+          code:
+            error.code || null,
+
+          hint:
+            error.hint || null,
         },
         { status: 500 }
       );
     }
 
-    return NextResponse.json(
-      {
-        success: true,
-        id: contract.id,
-        public_token: contract.public_token,
-      },
-      { status: 201 }
-    );
+    // =========================================================
+    // 정상 생성
+    // =========================================================
+
+    return NextResponse.json({
+      success: true,
+
+      id:
+        data.id,
+
+      public_token:
+        data.public_token,
+
+      total_price:
+        totalPrice,
+
+      items:
+        normalizedItems,
+    });
   } catch (error) {
-    console.error("계약 생성 예외:", error);
+    console.error(
+      "계약 생성 오류:",
+      error
+    );
 
     return NextResponse.json(
       {
-        error: "계약 생성 중 오류가 발생했습니다.",
-        detail:
+        error:
           error instanceof Error
             ? error.message
-            : String(error),
+            : "계약 생성 중 오류가 발생했습니다.",
       },
       { status: 500 }
     );

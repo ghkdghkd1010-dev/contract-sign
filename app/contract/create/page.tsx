@@ -11,54 +11,93 @@ type ContractItem = {
 };
 
 export default function NewContractPage() {
-  const [company, setCompany] = useState("");
-  const [companyBusinessNumber, setCompanyBusinessNumber] =
+  const [company, setCompany] =
     useState("");
 
-  const [contractor, setContractor] = useState("");
-  const [contractorBusinessNumber, setContractorBusinessNumber] =
+  const [
+    companyBusinessNumber,
+    setCompanyBusinessNumber,
+  ] = useState("");
+
+  const [contractor, setContractor] =
     useState("");
 
-  const [items, setItems] = useState<ContractItem[]>([
-    {
-      id: 1,
-      productName: "",
-      productSpec: "",
-      quantity: "",
-      unitPrice: "",
-    },
-  ]);
+  const [
+    contractorBusinessNumber,
+    setContractorBusinessNumber,
+  ] = useState("");
 
-  const [deliveryDate, setDeliveryDate] = useState("");
-  const [deliveryAddress, setDeliveryAddress] = useState("");
-
-  const [loading, setLoading] = useState(false);
-
-  // 품목 추가
-  const addItem = () => {
-    setItems((prev) => [
-      ...prev,
+  const [items, setItems] =
+    useState<ContractItem[]>([
       {
-        id: Date.now(),
+        id: 1,
         productName: "",
         productSpec: "",
         quantity: "",
         unitPrice: "",
       },
     ]);
+
+  const [deliveryDate, setDeliveryDate] =
+    useState("");
+
+  const [
+    deliveryAddress,
+    setDeliveryAddress,
+  ] = useState("");
+
+  const [loading, setLoading] =
+    useState(false);
+
+  // ==========================================
+  // 품목 추가
+  // ==========================================
+
+  const addItem = () => {
+    setItems((prev) => [
+      ...prev,
+
+      {
+        id: Date.now(),
+
+        productName: "",
+
+        productSpec: "",
+
+        quantity: "",
+
+        unitPrice: "",
+      },
+    ]);
   };
 
+  // ==========================================
   // 품목 삭제
-  const removeItem = (id: number) => {
+  // ==========================================
+
+  const removeItem = (
+    id: number
+  ) => {
     if (items.length === 1) {
-      alert("품목은 최소 1개 이상 입력해야 합니다.");
+      alert(
+        "품목은 최소 1개 이상 입력해야 합니다."
+      );
+
       return;
     }
 
-    setItems((prev) => prev.filter((item) => item.id !== id));
+    setItems((prev) =>
+      prev.filter(
+        (item) =>
+          item.id !== id
+      )
+    );
   };
 
-  // 품목 내용 변경
+  // ==========================================
+  // 품목 수정
+  // ==========================================
+
   const updateItem = (
     id: number,
     field: keyof ContractItem,
@@ -76,73 +115,132 @@ export default function NewContractPage() {
     );
   };
 
-  // 품목별 금액
-  const getItemTotal = (item: ContractItem) => {
+  // ==========================================
+  // 품목 금액
+  // ==========================================
+
+  const getItemTotal = (
+    item: ContractItem
+  ) => {
     return (
-      Number(item.quantity || 0) *
-      Number(item.unitPrice || 0)
+      Number(
+        item.quantity || 0
+      ) *
+      Number(
+        item.unitPrice || 0
+      )
     );
   };
 
-  // 전체 계약금액
-  const totalAmount = items.reduce(
-    (sum, item) => sum + getItemTotal(item),
-    0
-  );
+  // ==========================================
+  // 전체 금액
+  // ==========================================
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const totalAmount =
+    items.reduce(
+      (sum, item) =>
+        sum +
+        getItemTotal(item),
+      0
+    );
+
+  // ==========================================
+  // 계약 생성
+  // ==========================================
+
+  const handleSubmit = async (
+    e: React.FormEvent
+  ) => {
     e.preventDefault();
 
-    if (!company || !contractor) {
-      alert("계약기관, 계약상대자는 필수 입력사항입니다.");
+    if (
+      !company ||
+      !contractor
+    ) {
+      alert(
+        "계약기관, 계약상대자는 필수 입력사항입니다."
+      );
+
       return;
     }
 
     if (items.length === 0) {
-      alert("계약 물품을 최소 1개 이상 입력해주세요.");
+      alert(
+        "계약 물품을 최소 1개 이상 입력해주세요."
+      );
+
       return;
     }
 
     // 품목 검증
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i];
 
-      if (!item.productName.trim()) {
-        alert(`${i + 1}번째 품목의 제품명을 입력해주세요.`);
+    for (
+      let i = 0;
+      i < items.length;
+      i++
+    ) {
+      const item =
+        items[i];
+
+      if (
+        !item.productName.trim()
+      ) {
+        alert(
+          `${i + 1}번째 품목의 제품명을 입력해주세요.`
+        );
+
         return;
       }
 
-      if (!item.quantity || Number(item.quantity) <= 0) {
-        alert(`${i + 1}번째 품목의 수량을 입력해주세요.`);
+      if (
+        !item.quantity ||
+        Number(
+          item.quantity
+        ) <= 0
+      ) {
+        alert(
+          `${i + 1}번째 품목의 수량을 입력해주세요.`
+        );
+
         return;
       }
 
-      if (!item.unitPrice || Number(item.unitPrice) < 0) {
-        alert(`${i + 1}번째 품목의 단가를 입력해주세요.`);
+      if (
+        item.unitPrice === "" ||
+        Number(
+          item.unitPrice
+        ) < 0
+      ) {
+        alert(
+          `${i + 1}번째 품목의 단가를 입력해주세요.`
+        );
+
         return;
       }
     }
 
     if (!deliveryDate) {
-      alert("납품일자를 입력해주세요.");
+      alert(
+        "납품일자를 입력해주세요."
+      );
+
       return;
     }
 
     if (!deliveryAddress) {
-      alert("납품장소를 입력해주세요.");
+      alert(
+        "납품장소를 입력해주세요."
+      );
+
       return;
     }
 
     setLoading(true);
 
     try {
-      /*
-       * 계약 기본 조항
-       *
-       * 제품명 / 제품 상세설명 / 수량 / 단가 /
-       * 총 계약금액 / 납품일자 / 납품장소 등은
-       * ContractView.tsx의 계약 내용에서 표시합니다.
-       */
+      // ========================================
+      // 계약 기본 조항
+      // ========================================
 
       const contractText = `
 제1조 (목적)
@@ -198,45 +296,92 @@ export default function NewContractPage() {
 ③ 전자서명이 완료된 계약내용은 계약 당사자가 확인할 수 있는 전자문서로 관리한다.
 `.trim();
 
-      const response = await fetch("/api/contract", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          company,
-          companyBusinessNumber,
+      // ========================================
+      // API 요청
+      // ========================================
 
-          contractor,
-          contractorBusinessNumber,
+      const response =
+        await fetch(
+          "/api/contract",
+          {
+            method: "POST",
 
-          // 여러 품목
-          items: items.map((item) => ({
-            productName: item.productName,
-            productSpec: item.productSpec,
-            quantity: Number(item.quantity),
-            unitPrice: Number(item.unitPrice),
-          })),
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
 
-          deliveryDate,
-          deliveryAddress,
+            body: JSON.stringify({
+              company,
 
-          contract_text: contractText,
-          status: "pending",
-        }),
-      });
+              companyBusinessNumber,
 
-      const data = await response.json();
+              contractor,
+
+              contractorBusinessNumber,
+
+              items: items.map(
+                (item) => ({
+                  id: item.id,
+
+                  productName:
+                    item.productName,
+
+                  productSpec:
+                    item.productSpec,
+
+                  quantity:
+                    Number(
+                      item.quantity
+                    ),
+
+                  unitPrice:
+                    Number(
+                      item.unitPrice
+                    ),
+                })
+              ),
+
+              deliveryDate,
+
+              deliveryAddress,
+
+              contract_text:
+                contractText,
+
+              status:
+                "pending",
+            }),
+          }
+        );
+
+      const data =
+        await response.json();
+
+      // ========================================
+      // 오류
+      // ========================================
 
       if (!response.ok) {
         throw new Error(
-          data.error || "계약 생성에 실패했습니다."
+          data.detail
+            ? `${data.error}\n\n상세 오류:\n${data.detail}`
+            : data.error ||
+                "계약 생성에 실패했습니다."
         );
       }
 
-      if (!data.public_token) {
-        throw new Error("계약 토큰을 받지 못했습니다.");
+      if (
+        !data.public_token
+      ) {
+        throw new Error(
+          "계약 토큰을 받지 못했습니다."
+        );
       }
+
+      // ========================================
+      // 계약서 주소
+      // ========================================
 
       const contractUrl =
         `${window.location.origin}/contract/${data.public_token}`;
@@ -247,6 +392,7 @@ export default function NewContractPage() {
 
       window.location.href =
         `/contract/${data.public_token}`;
+
     } catch (error) {
       console.error(error);
 
@@ -262,10 +408,13 @@ export default function NewContractPage() {
 
   return (
     <main className="min-h-screen bg-[#f4f6f8] px-4 py-8 sm:px-6 sm:py-12">
+
       <div className="mx-auto max-w-[1000px] rounded-3xl bg-white px-6 py-8 shadow-sm sm:px-10 sm:py-12">
 
         {/* 제목 */}
+
         <div className="mb-12">
+
           <p className="mb-3 text-sm font-semibold tracking-[0.3em] text-[#526b8b]">
             ELECTRONIC CONTRACT SYSTEM
           </p>
@@ -277,143 +426,204 @@ export default function NewContractPage() {
           <p className="mt-3 text-sm text-[#718096] sm:text-base">
             계약 정보를 입력하여 계약상대자에게 전달할 전자계약서를 생성합니다.
           </p>
+
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-12">
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-12"
+        >
 
-          {/* =====================================================
+          {/* ========================================
               계약기관
-          ===================================================== */}
+          ======================================== */}
+
           <section>
+
             <div className="mb-5 flex items-center gap-3">
+
               <div className="h-9 w-1 bg-[#18283f]" />
 
               <h2 className="text-xl font-bold text-[#101827] sm:text-2xl">
                 계약기관(갑)
               </h2>
+
             </div>
 
             <div className="space-y-4">
+
               <input
                 type="text"
                 placeholder="기관명"
                 value={company}
-                onChange={(e) => setCompany(e.target.value)}
+                onChange={(e) =>
+                  setCompany(
+                    e.target.value
+                  )
+                }
                 className="w-full rounded-xl border border-[#cfd6df] px-5 py-4 text-base outline-none transition focus:border-[#18283f]"
               />
 
               <input
                 type="text"
                 placeholder="사업자등록번호"
-                value={companyBusinessNumber}
+                value={
+                  companyBusinessNumber
+                }
                 onChange={(e) =>
-                  setCompanyBusinessNumber(e.target.value)
+                  setCompanyBusinessNumber(
+                    e.target.value
+                  )
                 }
                 className="w-full rounded-xl border border-[#cfd6df] px-5 py-4 text-base outline-none transition focus:border-[#18283f]"
               />
+
             </div>
+
           </section>
 
-          {/* =====================================================
+          {/* ========================================
               계약상대자
-          ===================================================== */}
+          ======================================== */}
+
           <section>
+
             <div className="mb-5 flex items-center gap-3">
+
               <div className="h-9 w-1 bg-[#18283f]" />
 
               <h2 className="text-xl font-bold text-[#101827] sm:text-2xl">
                 계약상대자(을)
               </h2>
+
             </div>
 
             <div className="space-y-4">
+
               <input
                 type="text"
                 placeholder="업체명"
                 value={contractor}
-                onChange={(e) => setContractor(e.target.value)}
+                onChange={(e) =>
+                  setContractor(
+                    e.target.value
+                  )
+                }
                 className="w-full rounded-xl border border-[#cfd6df] px-5 py-4 text-base outline-none transition focus:border-[#18283f]"
               />
 
               <input
                 type="text"
                 placeholder="사업자등록번호"
-                value={contractorBusinessNumber}
+                value={
+                  contractorBusinessNumber
+                }
                 onChange={(e) =>
-                  setContractorBusinessNumber(e.target.value)
+                  setContractorBusinessNumber(
+                    e.target.value
+                  )
                 }
                 className="w-full rounded-xl border border-[#cfd6df] px-5 py-4 text-base outline-none transition focus:border-[#18283f]"
               />
+
             </div>
+
           </section>
 
-          {/* =====================================================
+          {/* ========================================
               계약 물품
-          ===================================================== */}
+          ======================================== */}
+
           <section>
+
             <div className="mb-5 flex items-center justify-between gap-3">
+
               <div className="flex items-center gap-3">
+
                 <div className="h-9 w-1 bg-[#18283f]" />
 
                 <h2 className="text-xl font-bold text-[#101827] sm:text-2xl">
                   계약 물품
                 </h2>
+
               </div>
 
               <button
                 type="button"
-                onClick={addItem}
+                onClick={
+                  addItem
+                }
                 className="rounded-xl bg-[#18283f] px-4 py-3 text-sm font-bold text-white transition hover:bg-[#263a57] sm:px-5"
               >
                 + 품목 추가
               </button>
+
             </div>
 
             <div className="space-y-6">
-              {items.map((item, index) => {
-                const itemTotal = getItemTotal(item);
 
-                return (
-                  <div
-                    key={item.id}
-                    className="rounded-2xl border border-[#dbe2ea] bg-[#fbfcfd] p-5 sm:p-7"
-                  >
-                    {/* 품목 제목 */}
-                    <div className="mb-5 flex items-center justify-between">
-                      <h3 className="text-lg font-bold text-[#18283f]">
-                        품목 {index + 1}
-                      </h3>
+              {items.map(
+                (
+                  item,
+                  index
+                ) => {
 
-                      {items.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => removeItem(item.id)}
-                          className="rounded-lg border border-[#e2caca] px-3 py-2 text-sm font-semibold text-[#a33a3a] transition hover:bg-[#fff5f5]"
-                        >
-                          품목 삭제
-                        </button>
-                      )}
-                    </div>
+                  const itemTotal =
+                    getItemTotal(
+                      item
+                    );
 
-                    <div className="space-y-4">
-                      {/* 제품명 */}
-                      <input
-                        type="text"
-                        placeholder="제품명"
-                        value={item.productName}
-                        onChange={(e) =>
-                          updateItem(
-                            item.id,
-                            "productName",
-                            e.target.value
-                          )
-                        }
-                        className="w-full rounded-xl border border-[#cfd6df] bg-white px-5 py-4 text-base outline-none transition focus:border-[#18283f]"
-                      />
+                  return (
+                    <div
+                      key={
+                        item.id
+                      }
+                      className="rounded-2xl border border-[#dbe2ea] bg-[#fbfcfd] p-5 sm:p-7"
+                    >
 
-                      {/* 상세설명 */}
-                      <textarea
-                        placeholder={`제품 상세설명을 입력하세요.
+                      <div className="mb-5 flex items-center justify-between">
+
+                        <h3 className="text-lg font-bold text-[#18283f]">
+                          품목 {index + 1}
+                        </h3>
+
+                        {items.length >
+                          1 && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              removeItem(
+                                item.id
+                              )
+                            }
+                            className="rounded-lg border border-[#e2caca] px-3 py-2 text-sm font-semibold text-[#a33a3a] transition hover:bg-[#fff5f5]"
+                          >
+                            품목 삭제
+                          </button>
+                        )}
+
+                      </div>
+
+                      <div className="space-y-4">
+
+                        <input
+                          type="text"
+                          placeholder="제품명"
+                          value={
+                            item.productName
+                          }
+                          onChange={(e) =>
+                            updateItem(
+                              item.id,
+                              "productName",
+                              e.target.value
+                            )
+                          }
+                          className="w-full rounded-xl border border-[#cfd6df] bg-white px-5 py-4 text-base outline-none transition focus:border-[#18283f]"
+                        />
+
+                        <textarea
+                          placeholder={`제품 상세설명을 입력하세요.
 
 예:
 - 상판 재질 및 크기
@@ -422,99 +632,120 @@ export default function NewContractPage() {
 - 제조사
 - 모델명
 - 기타 납품 조건`}
-                        value={item.productSpec}
-                        onChange={(e) =>
-                          updateItem(
-                            item.id,
-                            "productSpec",
-                            e.target.value
-                          )
-                        }
-                        rows={7}
-                        className="w-full resize-none rounded-xl border border-[#cfd6df] bg-white px-5 py-4 text-base leading-7 outline-none transition focus:border-[#18283f]"
-                      />
+                          value={
+                            item.productSpec
+                          }
+                          onChange={(e) =>
+                            updateItem(
+                              item.id,
+                              "productSpec",
+                              e.target.value
+                            )
+                          }
+                          rows={7}
+                          className="w-full resize-none rounded-xl border border-[#cfd6df] bg-white px-5 py-4 text-base leading-7 outline-none transition focus:border-[#18283f]"
+                        />
 
-                      {/* 수량 / 단가 */}
-                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
 
-                        <div>
-                          <label className="mb-2 block text-sm font-semibold text-[#475569]">
-                            수량
-                          </label>
+                          <div>
 
-                          <input
-                            type="number"
-                            min="1"
-                            placeholder="수량"
-                            value={item.quantity}
-                            onChange={(e) =>
-                              updateItem(
-                                item.id,
-                                "quantity",
-                                e.target.value
-                              )
-                            }
-                            className="w-full rounded-xl border border-[#cfd6df] bg-white px-5 py-4 text-base outline-none transition focus:border-[#18283f]"
-                          />
+                            <label className="mb-2 block text-sm font-semibold text-[#475569]">
+                              수량
+                            </label>
+
+                            <input
+                              type="number"
+                              min="1"
+                              placeholder="수량"
+                              value={
+                                item.quantity
+                              }
+                              onChange={(e) =>
+                                updateItem(
+                                  item.id,
+                                  "quantity",
+                                  e.target.value
+                                )
+                              }
+                              className="w-full rounded-xl border border-[#cfd6df] bg-white px-5 py-4 text-base outline-none transition focus:border-[#18283f]"
+                            />
+
+                          </div>
+
+                          <div>
+
+                            <label className="mb-2 block text-sm font-semibold text-[#475569]">
+                              단가
+                            </label>
+
+                            <input
+                              type="number"
+                              min="0"
+                              placeholder="단가"
+                              value={
+                                item.unitPrice
+                              }
+                              onChange={(e) =>
+                                updateItem(
+                                  item.id,
+                                  "unitPrice",
+                                  e.target.value
+                                )
+                              }
+                              className="w-full rounded-xl border border-[#cfd6df] bg-white px-5 py-4 text-base outline-none transition focus:border-[#18283f]"
+                            />
+
+                          </div>
+
                         </div>
 
-                        <div>
-                          <label className="mb-2 block text-sm font-semibold text-[#475569]">
-                            단가
-                          </label>
+                        <div className="rounded-xl border border-[#dbe2ea] bg-white px-5 py-4">
 
-                          <input
-                            type="number"
-                            min="0"
-                            placeholder="단가"
-                            value={item.unitPrice}
-                            onChange={(e) =>
-                              updateItem(
-                                item.id,
-                                "unitPrice",
-                                e.target.value
-                              )
-                            }
-                            className="w-full rounded-xl border border-[#cfd6df] bg-white px-5 py-4 text-base outline-none transition focus:border-[#18283f]"
-                          />
+                          <div className="flex items-center justify-between gap-4">
+
+                            <p className="text-sm text-[#718096]">
+                              품목 금액
+                            </p>
+
+                            <p className="text-lg font-bold text-[#18283f]">
+                              {itemTotal.toLocaleString(
+                                "ko-KR"
+                              )}
+                              원
+                            </p>
+
+                          </div>
+
+                          <p className="mt-1 text-xs text-[#94a3b8]">
+                            수량 × 단가
+                          </p>
+
                         </div>
 
                       </div>
 
-                      {/* 품목별 금액 */}
-                      <div className="rounded-xl border border-[#dbe2ea] bg-white px-5 py-4">
-                        <div className="flex items-center justify-between gap-4">
-                          <p className="text-sm text-[#718096]">
-                            품목 금액
-                          </p>
-
-                          <p className="text-lg font-bold text-[#18283f]">
-                            {itemTotal.toLocaleString("ko-KR")}원
-                          </p>
-                        </div>
-
-                        <p className="mt-1 text-xs text-[#94a3b8]">
-                          수량 × 단가
-                        </p>
-                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                }
+              )}
 
-              {/* 품목 추가 버튼 */}
               <button
                 type="button"
-                onClick={addItem}
+                onClick={
+                  addItem
+                }
                 className="w-full rounded-xl border-2 border-dashed border-[#cfd6df] py-4 text-sm font-bold text-[#526b8b] transition hover:border-[#18283f] hover:bg-[#f8fafc]"
               >
                 + 품목 추가
               </button>
 
-              {/* 총 계약금액 */}
               <div className="rounded-2xl border border-[#dbe2ea] bg-[#f7f9fb] px-5 py-6 sm:px-7">
+
                 <div className="flex items-center justify-between gap-4">
+
                   <div>
+
                     <p className="text-sm text-[#718096]">
                       총 계약금액
                     </p>
@@ -522,46 +753,65 @@ export default function NewContractPage() {
                     <p className="mt-1 text-xs text-[#94a3b8]">
                       전체 품목 금액 합계
                     </p>
+
                   </div>
 
                   <p className="text-2xl font-bold text-[#18283f] sm:text-3xl">
-                    {totalAmount.toLocaleString("ko-KR")}원
+                    {totalAmount.toLocaleString(
+                      "ko-KR"
+                    )}
+                    원
                   </p>
+
                 </div>
+
               </div>
+
             </div>
+
           </section>
 
-          {/* =====================================================
+          {/* ========================================
               납품 정보
-          ===================================================== */}
+          ======================================== */}
+
           <section>
+
             <div className="mb-5 flex items-center gap-3">
+
               <div className="h-9 w-1 bg-[#18283f]" />
 
               <h2 className="text-xl font-bold text-[#101827] sm:text-2xl">
                 납품 정보
               </h2>
+
             </div>
 
             <div className="space-y-4">
 
               <div>
+
                 <label className="mb-2 block text-sm font-semibold text-[#475569]">
                   납품일자
                 </label>
 
                 <input
                   type="date"
-                  value={deliveryDate}
+                  value={
+                    deliveryDate
+                  }
                   onChange={(e) =>
-                    setDeliveryDate(e.target.value)
+                    setDeliveryDate(
+                      e.target.value
+                    )
                   }
                   className="w-full rounded-xl border border-[#cfd6df] px-5 py-4 text-base outline-none transition focus:border-[#18283f]"
                 />
+
               </div>
 
               <div>
+
                 <label className="mb-2 block text-sm font-semibold text-[#475569]">
                   납품장소
                 </label>
@@ -569,27 +819,37 @@ export default function NewContractPage() {
                 <input
                   type="text"
                   placeholder="납품장소"
-                  value={deliveryAddress}
+                  value={
+                    deliveryAddress
+                  }
                   onChange={(e) =>
-                    setDeliveryAddress(e.target.value)
+                    setDeliveryAddress(
+                      e.target.value
+                    )
                   }
                   className="w-full rounded-xl border border-[#cfd6df] px-5 py-4 text-base outline-none transition focus:border-[#18283f]"
                 />
+
               </div>
 
             </div>
+
           </section>
 
-          {/* =====================================================
-              계약조건 안내
-          ===================================================== */}
+          {/* ========================================
+              계약조건
+          ======================================== */}
+
           <section>
+
             <div className="mb-5 flex items-center gap-3">
+
               <div className="h-9 w-1 bg-[#18283f]" />
 
               <h2 className="text-xl font-bold text-[#101827] sm:text-2xl">
                 계약조건
               </h2>
+
             </div>
 
             <div className="rounded-2xl border border-[#dbe2ea] bg-[#f8fafc] p-5 sm:p-7">
@@ -689,23 +949,28 @@ export default function NewContractPage() {
               </div>
 
               <div className="mt-6 border-t border-[#dbe2ea] pt-5">
+
                 <p className="text-xs leading-6 text-[#64748b]">
-                  ※ 실제 계약서에는 위 계약조건과 함께 입력된 계약물품,
-                  수량, 계약금액, 납품조건 등의 내용이 포함됩니다.
+                  ※ 실제 계약서에는 위 계약조건과 함께 입력된 계약물품, 수량, 계약금액, 납품조건 등의 내용이 포함됩니다.
                 </p>
+
               </div>
 
             </div>
+
           </section>
 
-          {/* =====================================================
-              생성 버튼
-          ===================================================== */}
+          {/* ========================================
+              생성
+          ======================================== */}
+
           <div className="border-t border-[#e2e8f0] pt-8">
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={
+                loading
+              }
               className="w-full rounded-xl bg-[#18283f] py-5 text-lg font-bold text-white transition hover:bg-[#263a57] disabled:cursor-not-allowed disabled:opacity-60 sm:text-xl"
             >
               {loading
@@ -714,14 +979,15 @@ export default function NewContractPage() {
             </button>
 
             <p className="mt-4 text-center text-xs leading-5 text-[#94a3b8]">
-              생성된 계약서는 계약상대자에게 전달하여 내용을 확인한 후
-              전자서명을 받을 수 있습니다.
+              생성된 계약서는 계약상대자에게 전달하여 내용을 확인한 후 전자서명을 받을 수 있습니다.
             </p>
 
           </div>
 
         </form>
+
       </div>
+
     </main>
   );
 }

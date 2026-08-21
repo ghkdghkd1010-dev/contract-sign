@@ -1,18 +1,32 @@
 "use client";
 
+type ContractItem = {
+  id: number;
+  productName: string;
+  productSpec: string;
+  quantity: number;
+  unitPrice: number;
+};
+
 type ContractViewProps = {
   company: string;
   companyBusinessNumber?: string;
+
   contractor: string;
   contractorBusinessNumber?: string;
 
   contractText: string;
 
+  items?: ContractItem[];
+
+  // 기존 단일 품목 호환
   productName?: string;
   productDescription?: string;
+
   quantity?: number | null;
   unitPrice?: number | null;
   totalPrice?: number | null;
+
   deliveryDate?: string | null;
   deliveryAddress?: string;
 
@@ -22,27 +36,46 @@ type ContractViewProps = {
   agreementChecked: boolean;
   specialChecked: boolean;
 
-  onAgreementChange: (checked: boolean) => void;
-  onSpecialChange: (checked: boolean) => void;
+  onAgreementChange: (
+    checked: boolean
+  ) => void;
+
+  onSpecialChange: (
+    checked: boolean
+  ) => void;
 
   onSign: () => void;
   onComplete: () => void;
 };
 
-const formatMoney = (value?: number | null) => {
+// ==========================================
+// 금액
+// ==========================================
+
+function formatMoney(
+  value?: number | null
+) {
   if (
     value === null ||
     value === undefined ||
-    Number.isNaN(value)
+    Number.isNaN(Number(value))
   ) {
     return "-";
   }
 
   return `${Number(value).toLocaleString("ko-KR")}원`;
-};
+}
 
-const formatDate = (value?: string | null) => {
-  if (!value) return "-";
+// ==========================================
+// 날짜
+// ==========================================
+
+function formatDate(
+  value?: string | null
+) {
+  if (!value) {
+    return "-";
+  }
 
   const date = new Date(value);
 
@@ -55,21 +88,55 @@ const formatDate = (value?: string | null) => {
     month: "2-digit",
     day: "2-digit",
   });
-};
+}
+
+// ==========================================
+// 계약조건 조문 제목 정리
+//
+// 예:
+// 제1조 (목적)
+// ↓
+// 제1조(목적)
+//
+// 본문 전체를 변경하지 않고
+// 조문 번호와 괄호 사이의 공백만 정리
+// ==========================================
+
+function formatContractText(
+  text: string
+) {
+  if (!text) {
+    return "계약조건이 없습니다.";
+  }
+
+  return text.replace(
+    /(제\s*\d+\s*조)\s+\(/g,
+    "$1("
+  );
+}
+
+// ==========================================
+// ContractView
+// ==========================================
 
 export default function ContractView({
   company,
   companyBusinessNumber,
+
   contractor,
   contractorBusinessNumber,
 
   contractText,
 
+  items = [],
+
   productName,
   productDescription,
+
   quantity,
   unitPrice,
   totalPrice,
+
   deliveryDate,
   deliveryAddress,
 
@@ -85,154 +152,433 @@ export default function ContractView({
   onSign,
   onComplete,
 }: ContractViewProps) {
-  const canSign = agreementChecked && specialChecked;
 
-  /*
-   * [계약 물품] 이전까지를 계약 조건으로 사용
-   */
-  const contractClauses = contractText
-    ? contractText.split("[계약 물품]")[0].trim()
-    : "";
+  // ========================================
+  // 기존 단일 품목 데이터 호환
+  // ========================================
 
-  /*
-   * 계약 조건을 제1조, 제2조 ... 단위로 분리
-   *
-   * 예:
-   * 제1조 (목적)
-   * 제2조 (계약 당사자)
-   *
-   * 를 각각 하나의 조문으로 분리한다.
-   */
-  const clauses = contractClauses
-    ? contractClauses
-        .split(/(?=제\d+조\s*\([^)]*\))/g)
-        .map((clause) => clause.trim())
-        .filter(Boolean)
-    : [];
+  const displayItems =
+    items.length > 0
+      ? items
+      : productName
+        ? [
+            {
+              id: 1,
+
+              productName:
+                productName,
+
+              productSpec:
+                productDescription ||
+                "",
+
+              quantity:
+                Number(
+                  quantity || 0
+                ),
+
+              unitPrice:
+                Number(
+                  unitPrice || 0
+                ),
+            },
+          ]
+        : [];
+
+  // ========================================
+  // 화면에서 다시 합계 계산
+  // ========================================
+
+  const calculatedTotal =
+    displayItems.reduce(
+      (sum, item) =>
+        sum +
+        Number(item.quantity || 0) *
+        Number(item.unitPrice || 0),
+      0
+    );
+
+  const finalTotal =
+    calculatedTotal > 0
+      ? calculatedTotal
+      : Number(totalPrice || 0);
+
+  // ========================================
+  // 계약조건 표시용 텍스트
+  // ========================================
+
+  const formattedContractText =
+    formatContractText(contractText);
 
   return (
-    <div className="relative mx-auto w-full max-w-[1000px] overflow-hidden bg-white shadow-sm">
+    <div
+      className="
+        mx-auto
+        w-full
+        max-w-[1250px]
+        overflow-hidden
+        bg-white
+        shadow-[0_8px_30px_rgba(15,23,42,0.08)]
+      "
+    >
 
-      {/* =========================================================
-          문서 헤더
-      ========================================================= */}
-      <header className="relative z-10 border-b-[3px] border-[#18283f] px-5 py-5 sm:px-8 sm:py-6 md:px-10">
-        <div className="flex items-start justify-between gap-4">
+      {/* ==================================================
+          HEADER
+      ================================================== */}
 
-          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+      <header
+        className="
+          relative
+          border-b-[3px]
+          border-[#18283f]
+          px-5
+          py-5
+          sm:px-12
+          sm:py-8
+        "
+      >
 
-            <div className="flex h-[52px] w-[52px] shrink-0 items-center justify-center sm:h-[68px] sm:w-[68px]">
+        <div
+          className="
+            flex
+            items-center
+            justify-between
+            gap-4
+            sm:gap-6
+          "
+        >
+
+          {/* LEFT */}
+
+          <div
+            className="
+              flex
+              min-w-0
+              items-center
+              gap-3
+              sm:gap-5
+            "
+          >
+
+            <div
+              className="
+                flex
+                h-[52px]
+                w-[52px]
+                shrink-0
+                items-center
+                justify-center
+                sm:h-[70px]
+                sm:w-[70px]
+              "
+            >
+
               <img
                 src="/25-logo.webp"
                 alt="제25보병사단 마크"
-                className="h-full w-full object-contain"
+                className="
+                  h-[50px]
+                  w-[50px]
+                  object-contain
+                  sm:h-[68px]
+                  sm:w-[68px]
+                "
               />
+
             </div>
 
             <div className="min-w-0">
-              <div className="truncate text-[8px] tracking-[2px] text-[#52657f] sm:text-[12px] sm:tracking-[4px]">
-                REPUBLIC OF KOREA
-              </div>
 
-              <div className="mt-1 truncate text-[17px] font-bold text-[#111827] sm:text-[22px]">
-                제 25보병사단
-              </div>
+              <p
+                className="
+                  whitespace-nowrap
+                  text-[8px]
+                  tracking-[0.18em]
+                  text-[#46658d]
+                  sm:text-[13px]
+                  sm:tracking-[0.38em]
+                "
+              >
+                R E P U B L I C&nbsp;&nbsp;O F&nbsp;&nbsp;K O R E A
+              </p>
+
+              <h1
+                className="
+                  mt-1
+                  text-base
+                  font-bold
+                  tracking-tight
+                  text-[#101827]
+                  sm:mt-2
+                  sm:text-2xl
+                "
+              >
+                제25보병사단
+              </h1>
+
             </div>
 
           </div>
 
-          <div className="shrink-0 text-right">
-            <div className="text-[9px] tracking-[0.5px] text-[#52657f] sm:text-[13px] sm:tracking-[1px]">
-              ELECTRONIC CONTRACT
-            </div>
+          {/* RIGHT */}
 
-            <div className="mt-1 text-[10px] font-medium text-[#34445b] sm:text-[14px]">
+          <div
+            className="
+              shrink-0
+              text-right
+            "
+          >
+
+            <p
+              className="
+                whitespace-nowrap
+                text-[8px]
+                tracking-[0.08em]
+                text-[#46658d]
+                sm:text-sm
+                sm:tracking-[0.12em]
+              "
+            >
+              ELECTRONIC CONTRACT
+            </p>
+
+            <p
+              className="
+                mt-1
+                text-[10px]
+                font-semibold
+                text-[#18283f]
+                sm:mt-2
+                sm:text-base
+              "
+            >
               전자계약 시스템
-            </div>
+            </p>
+
           </div>
 
         </div>
+
       </header>
 
+      {/* ==================================================
+          TITLE
+      ================================================== */}
 
-      {/* =========================================================
-          제목
-      ========================================================= */}
-      <section className="relative z-10 px-5 pb-6 pt-8 text-center sm:px-10 sm:pb-8 sm:pt-10">
+      <section
+        className="
+          px-5
+          pb-8
+          pt-9
+          sm:px-12
+          sm:pb-12
+          sm:pt-14
+        "
+      >
 
-        <div className="text-[8px] font-semibold tracking-[3px] text-[#52657f] sm:text-[12px] sm:tracking-[6px]">
-          OFFICIAL ELECTRONIC DOCUMENT
+        <div className="text-center">
+
+          <p
+            className="
+              text-[8px]
+              font-medium
+              tracking-[0.24em]
+              text-[#46658d]
+              sm:text-sm
+              sm:tracking-[0.42em]
+            "
+          >
+            O F F I C I A L&nbsp;&nbsp;E L E C T R O N I C&nbsp;&nbsp;D O C U M E N T
+          </p>
+
+          <h2
+            className="
+              mt-5
+              break-keep
+              text-[27px]
+              font-black
+              tracking-[0.08em]
+              text-[#101827]
+              sm:mt-7
+              sm:text-5xl
+              sm:tracking-[0.16em]
+            "
+          >
+            물품 납품 계약서
+          </h2>
+
+          <p
+            className="
+              mt-5
+              break-keep
+              text-xs
+              text-[#5f7899]
+              sm:mt-7
+              sm:text-base
+            "
+          >
+            물품 납품 및 계약 조건에 관한 전자계약 문서
+          </p>
+
         </div>
-
-        <h1 className="mt-3 text-[30px] font-bold tracking-[4px] text-[#111827] sm:mt-4 sm:text-[42px] sm:tracking-[8px]">
-          물품 납품 계약서
-        </h1>
-
-        <div className="mx-auto mt-4 h-[3px] w-[55px] bg-[#18283f] sm:mt-5 sm:w-[68px]" />
-
-        <p className="mt-3 text-[12px] text-[#64748b] sm:text-[13px]">
-          물품 납품 및 계약 조건에 관한 전자계약 문서
-        </p>
 
       </section>
 
+      {/* ==================================================
+          CONTRACT INFORMATION
+      ================================================== */}
 
-      {/* =========================================================
-          계약 기본정보
-      ========================================================= */}
-      <section className="relative z-10 px-5 sm:px-10 md:px-12">
+      <section
+        className="
+          px-5
+          sm:px-12
+        "
+      >
 
-        <div className="mb-2 flex items-end justify-between gap-3">
+        <div
+          className="
+            mb-4
+            flex
+            items-end
+            justify-between
+            gap-3
+          "
+        >
 
-          <h2 className="text-[17px] font-bold text-[#111827] sm:text-[19px]">
+          <h3
+            className="
+              text-lg
+              font-bold
+              text-[#101827]
+              sm:text-2xl
+            "
+          >
             계약 기본정보
-          </h2>
+          </h3>
 
-          <span className="hidden text-[11px] tracking-[2px] text-[#7b8798] sm:block">
+          <span
+            className="
+              hidden
+              text-[11px]
+              tracking-[0.25em]
+              text-[#69809e]
+              sm:block
+              sm:text-xs
+            "
+          >
             CONTRACT INFORMATION
           </span>
 
         </div>
 
-        <div className="border-t-2 border-[#18283f]">
+        <div
+          className="
+            border-t-[2px]
+            border-[#18283f]
+          "
+        >
 
-          <div className="grid grid-cols-1 sm:grid-cols-2">
+          <div
+            className="
+              grid
+              grid-cols-1
+              sm:grid-cols-2
+            "
+          >
 
-            {/* 계약기관 */}
-            <div className="border-b border-[#cbd5e1] px-4 py-4 sm:border-b-0 sm:border-r sm:px-5">
+            {/* 갑 */}
 
-              <div className="text-[11px] text-[#64748b] sm:text-[12px]">
+            <div
+              className="
+                border-b
+                border-[#ccd6e2]
+                px-4
+                py-5
+                sm:border-r
+                sm:px-5
+                sm:py-7
+              "
+            >
+
+              <p className="text-xs text-[#66809f] sm:text-sm">
                 계약기관(갑)
-              </div>
+              </p>
 
-              <div className="mt-1.5 text-[15px] font-semibold text-[#111827] sm:text-[16px]">
+              <p
+                className="
+                  mt-3
+                  break-words
+                  text-sm
+                  font-bold
+                  text-[#101827]
+                  sm:mt-4
+                  sm:text-lg
+                "
+              >
                 {company || "-"}
-              </div>
+              </p>
 
               {companyBusinessNumber && (
-                <div className="mt-1.5 text-[12px] text-[#64748b]">
-                  사업자등록번호: {companyBusinessNumber}
-                </div>
+                <p
+                  className="
+                    mt-2
+                    break-words
+                    text-[11px]
+                    text-[#718096]
+                    sm:text-xs
+                  "
+                >
+                  사업자등록번호&nbsp;
+                  {companyBusinessNumber}
+                </p>
               )}
 
             </div>
 
+            {/* 을 */}
 
-            {/* 계약상대자 */}
-            <div className="border-b border-[#cbd5e1] px-4 py-4 sm:border-b-0 sm:px-5">
+            <div
+              className="
+                border-b
+                border-[#ccd6e2]
+                px-4
+                py-5
+                sm:px-5
+                sm:py-7
+              "
+            >
 
-              <div className="text-[11px] text-[#64748b] sm:text-[12px]">
+              <p className="text-xs text-[#66809f] sm:text-sm">
                 계약상대자(을)
-              </div>
+              </p>
 
-              <div className="mt-1.5 text-[15px] font-semibold text-[#111827] sm:text-[16px]">
+              <p
+                className="
+                  mt-3
+                  break-words
+                  text-sm
+                  font-bold
+                  text-[#101827]
+                  sm:mt-4
+                  sm:text-lg
+                "
+              >
                 {contractor || "-"}
-              </div>
+              </p>
 
               {contractorBusinessNumber && (
-                <div className="mt-1.5 text-[12px] text-[#64748b]">
-                  사업자등록번호: {contractorBusinessNumber}
-                </div>
+                <p
+                  className="
+                    mt-2
+                    break-words
+                    text-[11px]
+                    text-[#718096]
+                    sm:text-xs
+                  "
+                >
+                  사업자등록번호&nbsp;
+                  {contractorBusinessNumber}
+                </p>
               )}
 
             </div>
@@ -243,499 +589,1153 @@ export default function ContractView({
 
       </section>
 
+      {/* ==================================================
+          CONTRACT TERMS
+      ================================================== */}
 
-      {/* =========================================================
-          계약 조건 / 제1조~제11조
-      ========================================================= */}
-      <section className="relative z-10 px-5 pt-9 sm:px-10 sm:pt-10 md:px-12">
+      <section
+        className="
+          px-5
+          pt-10
+          sm:px-12
+          sm:pt-14
+        "
+      >
 
-        <div className="mb-2 flex items-end justify-between gap-3">
+        <div
+          className="
+            mb-4
+            flex
+            items-end
+            justify-between
+            gap-3
+          "
+        >
 
-          <h2 className="text-[17px] font-bold text-[#111827] sm:text-[19px]">
+          <h3
+            className="
+              text-lg
+              font-bold
+              text-[#101827]
+              sm:text-2xl
+            "
+          >
             계약 조건
-          </h2>
+          </h3>
 
-          <span className="hidden text-[11px] tracking-[2px] text-[#7b8798] sm:block">
+          <span
+            className="
+              hidden
+              text-[11px]
+              tracking-[0.25em]
+              text-[#69809e]
+              sm:block
+              sm:text-xs
+            "
+          >
             CONTRACT TERMS
           </span>
 
         </div>
 
+        <div
+          className="
+            relative
+            overflow-hidden
+            border-t-[2px]
+            border-[#18283f]
+            bg-[#f8fafc]
+          "
+        >
 
-        {/* =====================================================
-            계약 조건 영역
-        ===================================================== */}
-        <div className="relative overflow-hidden border-t-2 border-[#18283f] bg-[#fafbfd]">
-
-          {/* =====================================================
+          {/* ==================================================
               워터마크
-              기존보다 약 8% 크게
-          ===================================================== */}
+
+              PC:
+              360px × 360px
+
+              모바일:
+              220px × 220px
+
+              25사단 로고 그대로 유지
+          ================================================== */}
+
           <div
-            className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center overflow-hidden"
-            aria-hidden="true"
+            className="
+              pointer-events-none
+              absolute
+              inset-0
+              flex
+              items-center
+              justify-center
+              overflow-hidden
+            "
           >
+
             <img
               src="/25-logo.webp"
               alt=""
-              className="w-[520px] opacity-[0.075] sm:w-[595px] md:w-[650px]"
+              aria-hidden="true"
+              className="
+                h-[220px]
+                w-[220px]
+                max-w-none
+                shrink-0
+                object-contain
+                opacity-[0.035]
+                sm:h-[360px]
+                sm:w-[360px]
+              "
             />
+
           </div>
 
+          {/* 계약조건 본문 */}
 
-          {/* =====================================================
-              계약 조건 본문
-          ===================================================== */}
-          <div className="relative z-10 px-5 py-6 sm:px-7 sm:py-7">
+          <div
+            className="
+              relative
+              px-4
+              py-7
+              sm:px-8
+              sm:py-10
+            "
+          >
 
-            {clauses.length > 0 ? (
+            <div
+              className="
+                whitespace-pre-wrap
+                break-words
+                text-[13px]
+                leading-7
+                text-[#334155]
+                sm:text-[15px]
+                sm:leading-8
+              "
+            >
+              {formattedContractText}
+            </div>
 
-              <div className="space-y-12">
+          </div>
 
-                {clauses.map((clause, index) => {
+        </div>
 
-                  /*
-                   * 조문 제목 추출
-                   *
-                   * 예:
-                   * 제1조 (목적)
-                   *
-                   * → 제1조(목적)
-                   */
-                  const titleMatch = clause.match(
-                    /^제(\d+)\s*조\s*\(([^)]+)\)\s*/
-                  );
+      </section>
 
-                  if (!titleMatch) {
-                    return (
-                      <div
-                        key={index}
-                        className="whitespace-pre-wrap break-words text-[13.7px] leading-7 text-[#334155] sm:text-[14.7px]"
+      {/* ==================================================
+          CONTRACT DETAILS
+      ================================================== */}
+
+      <section
+        className="
+          px-5
+          pb-9
+          pt-10
+          sm:px-12
+          sm:pb-12
+          sm:pt-14
+        "
+      >
+
+        <div
+          className="
+            mb-4
+            flex
+            items-end
+            justify-between
+            gap-3
+          "
+        >
+
+          <h3
+            className="
+              text-lg
+              font-bold
+              text-[#101827]
+              sm:text-2xl
+            "
+          >
+            계약 내용
+          </h3>
+
+          <span
+            className="
+              hidden
+              text-[11px]
+              tracking-[0.25em]
+              text-[#69809e]
+              sm:block
+              sm:text-xs
+            "
+          >
+            CONTRACT DETAILS
+          </span>
+
+        </div>
+
+        {/* ==================================================
+            품목 테이블
+        ================================================== */}
+
+        <div
+          className="
+            overflow-hidden
+            border-t-[2px]
+            border-[#18283f]
+          "
+        >
+
+          {/* ==================================================
+              PC
+          ================================================== */}
+
+          <div className="hidden sm:block">
+
+            <div
+              className="
+                grid
+                grid-cols-[minmax(0,1fr)_130px_150px_170px]
+                bg-[#f5f7fa]
+                text-sm
+                font-bold
+                text-[#334155]
+              "
+            >
+
+              <div className="border-b border-[#ccd6e2] px-5 py-4">
+                품목
+              </div>
+
+              <div
+                className="
+                  border-b
+                  border-l
+                  border-[#ccd6e2]
+                  px-5
+                  py-4
+                  text-center
+                "
+              >
+                수량
+              </div>
+
+              <div
+                className="
+                  border-b
+                  border-l
+                  border-[#ccd6e2]
+                  px-5
+                  py-4
+                  text-right
+                "
+              >
+                단가
+              </div>
+
+              <div
+                className="
+                  border-b
+                  border-l
+                  border-[#ccd6e2]
+                  px-5
+                  py-4
+                  text-right
+                "
+              >
+                금액
+              </div>
+
+            </div>
+
+            {displayItems.map(
+              (item, index) => {
+
+                const itemTotal =
+                  Number(item.quantity || 0) *
+                  Number(item.unitPrice || 0);
+
+                return (
+                  <div
+                    key={
+                      item.id ??
+                      index
+                    }
+                    className="
+                      grid
+                      grid-cols-[minmax(0,1fr)_130px_150px_170px]
+                      border-b
+                      border-[#ccd6e2]
+                    "
+                  >
+
+                    <div className="min-w-0 px-5 py-5">
+
+                      <p
+                        className="
+                          break-words
+                          font-bold
+                          text-[#18283f]
+                        "
                       >
-                        {clause}
-                      </div>
-                    );
-                  }
+                        {item.productName || "-"}
+                      </p>
 
-                  const articleNumber = titleMatch[1];
-                  const articleTitle = titleMatch[2];
-
-                  const body = clause
-                    .slice(titleMatch[0].length)
-                    .trim();
-
-                  return (
-                    <div key={index}>
-
-                      {/* 조문 제목 */}
-                      <div className="mb-3 text-[13.7px] font-bold leading-7 text-[#263a57] sm:text-[14.7px]">
-                        제{articleNumber}조({articleTitle})
-                      </div>
-
-
-                      {/* 조문 본문 */}
-                      {body && (
-                        <div className="whitespace-pre-wrap break-words text-[13.7px] leading-7 text-[#334155] sm:text-[14.7px]">
-                          {body}
-                        </div>
+                      {item.productSpec && (
+                        <p
+                          className="
+                            mt-2
+                            whitespace-pre-wrap
+                            break-words
+                            text-xs
+                            leading-6
+                            text-[#718096]
+                          "
+                        >
+                          {item.productSpec}
+                        </p>
                       )}
 
                     </div>
-                  );
-                })}
 
-              </div>
+                    <div
+                      className="
+                        border-l
+                        border-[#ccd6e2]
+                        px-5
+                        py-5
+                        text-center
+                        text-[#334155]
+                      "
+                    >
+                      {Number(
+                        item.quantity || 0
+                      ).toLocaleString("ko-KR")}
+                    </div>
 
-            ) : (
+                    <div
+                      className="
+                        border-l
+                        border-[#ccd6e2]
+                        px-5
+                        py-5
+                        text-right
+                        text-[#334155]
+                      "
+                    >
+                      {formatMoney(
+                        item.unitPrice
+                      )}
+                    </div>
 
-              <div className="text-[13.7px] text-[#94a3b8] sm:text-[14.7px]">
-                계약 조건이 없습니다.
-              </div>
+                    <div
+                      className="
+                        border-l
+                        border-[#ccd6e2]
+                        px-5
+                        py-5
+                        text-right
+                        font-semibold
+                        text-[#18283f]
+                      "
+                    >
+                      {formatMoney(
+                        itemTotal
+                      )}
+                    </div>
 
+                  </div>
+                );
+              }
+            )}
+
+          </div>
+
+          {/* ==================================================
+              모바일
+          ================================================== */}
+
+          <div className="sm:hidden">
+
+            {displayItems.map(
+              (item, index) => {
+
+                const itemTotal =
+                  Number(item.quantity || 0) *
+                  Number(item.unitPrice || 0);
+
+                return (
+                  <div
+                    key={
+                      item.id ??
+                      index
+                    }
+                    className="
+                      border-b
+                      border-[#ccd6e2]
+                    "
+                  >
+
+                    <div
+                      className="
+                        bg-[#f5f7fa]
+                        px-4
+                        py-3
+                      "
+                    >
+
+                      <span
+                        className="
+                          text-xs
+                          font-bold
+                          tracking-wide
+                          text-[#526b8b]
+                        "
+                      >
+                        품목 {index + 1}
+                      </span>
+
+                    </div>
+
+                    <div
+                      className="
+                        space-y-4
+                        px-4
+                        py-5
+                      "
+                    >
+
+                      {/* 제품명 */}
+
+                      <div>
+
+                        <p className="text-xs text-[#718096]">
+                          제품명
+                        </p>
+
+                        <p
+                          className="
+                            mt-1
+                            break-words
+                            font-bold
+                            text-[#18283f]
+                          "
+                        >
+                          {item.productName || "-"}
+                        </p>
+
+                      </div>
+
+                      {/* 제품 상세 설명 */}
+
+                      {item.productSpec && (
+                        <div>
+
+                          <p className="text-xs text-[#718096]">
+                            제품 상세 설명
+                          </p>
+
+                          <p
+                            className="
+                              mt-1
+                              whitespace-pre-wrap
+                              break-words
+                              text-sm
+                              leading-6
+                              text-[#334155]
+                            "
+                          >
+                            {item.productSpec}
+                          </p>
+
+                        </div>
+                      )}
+
+                      {/* 수량 / 단가 */}
+
+                      <div
+                        className="
+                          grid
+                          grid-cols-2
+                          gap-3
+                        "
+                      >
+
+                        <div
+                          className="
+                            min-w-0
+                            rounded-lg
+                            bg-[#f8fafc]
+                            px-3
+                            py-3
+                          "
+                        >
+
+                          <p className="text-xs text-[#718096]">
+                            수량
+                          </p>
+
+                          <p
+                            className="
+                              mt-1
+                              break-words
+                              font-semibold
+                              text-[#18283f]
+                            "
+                          >
+                            {Number(
+                              item.quantity || 0
+                            ).toLocaleString("ko-KR")}
+                          </p>
+
+                        </div>
+
+                        <div
+                          className="
+                            min-w-0
+                            rounded-lg
+                            bg-[#f8fafc]
+                            px-3
+                            py-3
+                          "
+                        >
+
+                          <p className="text-xs text-[#718096]">
+                            단가
+                          </p>
+
+                          <p
+                            className="
+                              mt-1
+                              break-words
+                              text-sm
+                              font-semibold
+                              text-[#18283f]
+                            "
+                          >
+                            {formatMoney(
+                              item.unitPrice
+                            )}
+                          </p>
+
+                        </div>
+
+                      </div>
+
+                      {/* 품목 금액 */}
+
+                      <div
+                        className="
+                          flex
+                          items-center
+                          justify-between
+                          gap-3
+                          border-t
+                          border-[#e2e8f0]
+                          pt-4
+                        "
+                      >
+
+                        <span className="shrink-0 text-xs text-[#718096]">
+                          품목 금액
+                        </span>
+
+                        <span
+                          className="
+                            break-words
+                            text-right
+                            font-bold
+                            text-[#18283f]
+                          "
+                        >
+                          {formatMoney(
+                            itemTotal
+                          )}
+                        </span>
+
+                      </div>
+
+                    </div>
+
+                  </div>
+                );
+              }
             )}
 
           </div>
 
         </div>
 
-      </section>
+        {/* ==================================================
+            총 계약금액
+        ================================================== */}
 
+        <div
+          className="
+            mt-5
+            flex
+            flex-col
+            items-start
+            justify-between
+            gap-2
+            border-t-[2px]
+            border-[#18283f]
+            bg-[#f5f7fa]
+            px-4
+            py-5
+            sm:flex-row
+            sm:items-center
+            sm:gap-4
+            sm:px-6
+          "
+        >
 
-      {/* =========================================================
-          계약 내용
-      ========================================================= */}
-      <section className="relative z-10 px-5 pt-9 sm:px-10 sm:pt-10 md:px-12">
+          <div>
 
-        <div className="mb-2 flex items-end justify-between gap-3">
+            <p
+              className="
+                text-sm
+                font-semibold
+                text-[#526b8b]
+              "
+            >
+              총 계약 금액
+            </p>
 
-          <h2 className="text-[17px] font-bold text-[#111827] sm:text-[19px]">
-            계약 내용
-          </h2>
+            <p
+              className="
+                mt-1
+                text-xs
+                text-[#94a3b8]
+              "
+            >
+              전체 계약품목 금액 합계
+            </p>
 
-          <span className="hidden text-[11px] tracking-[2px] text-[#7b8798] sm:block">
-            CONTRACT DETAILS
-          </span>
+          </div>
+
+          <p
+            className="
+              break-words
+              text-xl
+              font-black
+              text-[#101827]
+              sm:text-2xl
+            "
+          >
+            {formatMoney(
+              finalTotal
+            )}
+          </p>
 
         </div>
 
+        {/* ==================================================
+            납품 정보
+        ================================================== */}
 
-        <div className="border-t-2 border-[#18283f]">
+        <div
+          className="
+            mt-7
+            overflow-hidden
+            border
+            border-[#ccd6e2]
+            sm:mt-8
+          "
+        >
 
-          {/* 제품명 */}
-          <div className="grid grid-cols-1 border-b border-[#cbd5e1] sm:grid-cols-[180px_1fr]">
+          <div
+            className="
+              grid
+              grid-cols-[88px_minmax(0,1fr)]
+              border-b
+              border-[#ccd6e2]
+              sm:grid-cols-[110px_1fr]
+            "
+          >
 
-            <div className="bg-[#f8fafc] px-4 py-3.5 text-[12px] font-semibold text-[#475569] sm:px-5">
-              제품명
-            </div>
-
-            <div className="px-4 py-3.5 text-[14px] font-semibold text-[#111827] sm:px-5">
-              {productName || "-"}
-            </div>
-
-          </div>
-
-
-          {/* 제품 상세 설명 */}
-          <div className="grid grid-cols-1 border-b border-[#cbd5e1] sm:grid-cols-[180px_1fr]">
-
-            <div className="bg-[#f8fafc] px-4 py-3.5 text-[12px] font-semibold text-[#475569] sm:px-5">
-              제품 상세 설명
-            </div>
-
-            <div className="whitespace-pre-wrap break-words px-4 py-3.5 text-[14px] leading-7 text-[#273449] sm:px-5">
-              {productDescription || "-"}
-            </div>
-
-          </div>
-
-
-          {/* 수량 */}
-          <div className="grid grid-cols-1 border-b border-[#cbd5e1] sm:grid-cols-[180px_1fr]">
-
-            <div className="bg-[#f8fafc] px-4 py-3.5 text-[12px] font-semibold text-[#475569] sm:px-5">
-              수량
-            </div>
-
-            <div className="px-4 py-3.5 text-[14px] text-[#111827] sm:px-5">
-              {quantity ?? "-"}
-            </div>
-
-          </div>
-
-
-          {/* 단가 */}
-          <div className="grid grid-cols-1 border-b border-[#cbd5e1] sm:grid-cols-[180px_1fr]">
-
-            <div className="bg-[#f8fafc] px-4 py-3.5 text-[12px] font-semibold text-[#475569] sm:px-5">
-              단가
-            </div>
-
-            <div className="px-4 py-3.5 text-[14px] text-[#111827] sm:px-5">
-              {formatMoney(unitPrice)}
-            </div>
-
-          </div>
-
-
-          {/* 총 계약 금액 */}
-          <div className="grid grid-cols-1 border-b border-[#cbd5e1] sm:grid-cols-[180px_1fr]">
-
-            <div className="bg-[#f8fafc] px-4 py-3.5 text-[12px] font-semibold text-[#475569] sm:px-5">
-              총 계약 금액
-            </div>
-
-            <div className="px-4 py-3.5 text-[14px] font-bold text-[#18283f] sm:px-5">
-              {formatMoney(totalPrice)}
-            </div>
-
-          </div>
-
-
-          {/* 납품 일자 */}
-          <div className="grid grid-cols-1 border-b border-[#cbd5e1] sm:grid-cols-[180px_1fr]">
-
-            <div className="bg-[#f8fafc] px-4 py-3.5 text-[12px] font-semibold text-[#475569] sm:px-5">
+            <div
+              className="
+                bg-[#f5f7fa]
+                px-3
+                py-4
+                text-xs
+                font-bold
+                text-[#334155]
+                sm:px-4
+                sm:text-sm
+              "
+            >
               납품 일자
             </div>
 
-            <div className="px-4 py-3.5 text-[14px] text-[#111827] sm:px-5">
-              {formatDate(deliveryDate)}
+            <div
+              className="
+                min-w-0
+                break-words
+                px-3
+                py-4
+                text-xs
+                text-[#334155]
+                sm:px-4
+                sm:text-sm
+              "
+            >
+              {formatDate(
+                deliveryDate
+              )}
             </div>
 
           </div>
 
+          <div
+            className="
+              grid
+              grid-cols-[88px_minmax(0,1fr)]
+              sm:grid-cols-[110px_1fr]
+            "
+          >
 
-          {/* 납품 장소 */}
-          <div className="grid grid-cols-1 border-b border-[#cbd5e1] sm:grid-cols-[180px_1fr]">
-
-            <div className="bg-[#f8fafc] px-4 py-3.5 text-[12px] font-semibold text-[#475569] sm:px-5">
+            <div
+              className="
+                bg-[#f5f7fa]
+                px-3
+                py-4
+                text-xs
+                font-bold
+                text-[#334155]
+                sm:px-4
+                sm:text-sm
+              "
+            >
               납품 장소
             </div>
 
-            <div className="px-4 py-3.5 text-[14px] text-[#111827] sm:px-5">
+            <div
+              className="
+                min-w-0
+                break-words
+                px-3
+                py-4
+                text-xs
+                text-[#334155]
+                sm:px-4
+                sm:text-sm
+              "
+            >
               {deliveryAddress || "-"}
             </div>
 
           </div>
 
-
-          {/* 대금 지급 조건 */}
-          <div className="grid grid-cols-1 sm:grid-cols-[180px_1fr]">
-
-            <div className="bg-[#f8fafc] px-4 py-3.5 text-[12px] font-semibold text-[#475569] sm:px-5">
-              대금 지급 조건
-            </div>
-
-            <div className="px-4 py-3.5 text-[14px] font-medium text-[#273449] sm:px-5">
-              납품 및 검수 완료 후 지급
-            </div>
-
-          </div>
-
         </div>
 
       </section>
 
+      {/* ==================================================
+          SIGNATURE
+      ================================================== */}
 
-      {/* =========================================================
-          계약 상대자 확인
-      ========================================================= */}
-      <section className="relative z-10 px-5 pt-8 sm:px-10 sm:pt-9 md:px-12">
+      <section
+        className="
+          border-t
+          border-[#e2e8f0]
+          px-5
+          pb-10
+          pt-9
+          sm:px-12
+          sm:pb-12
+          sm:pt-10
+        "
+      >
 
-        <div className="mb-2 flex items-end justify-between gap-3">
+        <div className="mb-5">
 
-          <h2 className="text-[17px] font-bold text-[#111827] sm:text-[19px]">
-            계약 상대자 확인
-          </h2>
+          <h3
+            className="
+              text-lg
+              font-bold
+              text-[#101827]
+              sm:text-xl
+            "
+          >
+            전자서명
+          </h3>
 
-          <span className="hidden text-[11px] tracking-[2px] text-[#7b8798] sm:block">
-            CONTRACT CONFIRMATION
-          </span>
-
-        </div>
-
-
-        <div className="border-t-2 border-[#18283f] bg-[#fafbfd] px-5 py-5 sm:px-7 sm:py-6">
-
-          <p className="text-[13px] leading-7 text-[#334155] sm:text-[14px]">
-
-            본인은 본 계약서에 기재된{" "}
-
-            <strong>
-              계약 당사자, 계약 물품, 제품 상세 설명, 수량, 계약 금액,
-              납품 조건 및 계약 조건
-            </strong>
-
-            을 모두 확인하였으며, 본 계약 내용에 동의합니다.
-
+          <p
+            className="
+              mt-2
+              break-keep
+              text-xs
+              leading-6
+              text-[#718096]
+              sm:text-sm
+            "
+          >
+            계약내용과 계약조건을 확인한 후 전자서명을 진행해주세요.
           </p>
 
-
-          <div className="mt-5 space-y-3.5">
-
-            <label className="flex cursor-pointer items-start gap-3">
-
-              <input
-                type="checkbox"
-                checked={agreementChecked}
-                onChange={(e) =>
-                  onAgreementChange(e.target.checked)
-                }
-                className="mt-[3px] h-[18px] w-[18px] shrink-0 cursor-pointer accent-[#18283f]"
-              />
-
-              <span className="text-[13px] leading-6 text-[#1e293b] sm:text-[14px]">
-                계약 내용을 모두 확인하였습니다.
-              </span>
-
-            </label>
-
-
-            <label className="flex cursor-pointer items-start gap-3">
-
-              <input
-                type="checkbox"
-                checked={specialChecked}
-                onChange={(e) =>
-                  onSpecialChange(e.target.checked)
-                }
-                className="mt-[3px] h-[18px] w-[18px] shrink-0 cursor-pointer accent-[#18283f]"
-              />
-
-              <span className="text-[13px] leading-6 text-[#1e293b] sm:text-[14px]">
-                계약 조건 및 특약 사항을 확인하였습니다.
-              </span>
-
-            </label>
-
-          </div>
-
         </div>
 
-      </section>
+        <div
+          className="
+            rounded-2xl
+            border
+            border-[#dbe2ea]
+            bg-[#f8fafc]
+            p-4
+            sm:p-7
+          "
+        >
 
-
-      {/* =========================================================
-          서명
-      ========================================================= */}
-      <section className="relative z-10 px-5 pb-7 pt-8 sm:px-10 sm:pb-9 sm:pt-9 md:px-12">
-
-        <div className="mb-2 flex items-end justify-between gap-3">
-
-          <h2 className="text-[17px] font-bold text-[#111827] sm:text-[19px]">
-            계약 상대자 전자서명
-          </h2>
-
-          <span className="hidden text-[11px] tracking-[2px] text-[#7b8798] sm:block">
-            CONTRACTOR SIGNATURE
-          </span>
-
-        </div>
-
-
-        <div className="border-t-2 border-[#18283f]">
-
-          <div className="flex flex-col gap-4 px-4 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-
-            <div className="min-w-0">
-
-              <div className="text-[10px] tracking-[2px] text-[#64748b] sm:text-[11px]">
-                CONTRACTOR
-              </div>
-
-              <div className="mt-1 break-words text-[15px] font-bold text-[#111827] sm:text-[16px]">
-                {contractor || "-"}
-              </div>
-
-            </div>
-
-
-            <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center sm:gap-4">
-
-              <span className="text-[12px] text-[#64748b]">
-                전자서명
-              </span>
-
-
-              <div className="flex h-[60px] w-full max-w-[260px] items-center justify-center border-b border-[#475569] sm:w-[210px]">
-
-                {signature ? (
-                  <img
-                    src={signature}
-                    alt="계약 상대자 전자서명"
-                    className="max-h-[50px] max-w-[90%] object-contain"
-                  />
-                ) : (
-                  <span className="text-[12px] text-[#94a3b8]">
-                    서명란
-                  </span>
-                )}
-
-              </div>
-
-
-              {!completed && (
-                <button
-                  type="button"
-                  onClick={() => {
-
-                    if (!canSign) {
-                      alert(
-                        "서명하기 전에 계약 내용과 계약 조건 및 특약 사항을 모두 확인해 주세요."
-                      );
-
-                      return;
-                    }
-
-                    onSign();
-                  }}
-                  className="w-full rounded-md bg-[#18283f] px-5 py-3 text-[13px] font-semibold text-white transition hover:bg-[#263a57] sm:w-auto"
-                >
-                  {signature ? "서명 수정" : "서명하기"}
-                </button>
-              )}
-
-            </div>
-
-          </div>
-
-        </div>
-
-      </section>
-
-
-      {/* =========================================================
-          계약 완료
-      ========================================================= */}
-      {!completed && (
-        <div className="relative z-10 px-5 pb-8 sm:px-10 sm:pb-10 md:px-12">
-
-          <button
-            type="button"
-            onClick={onComplete}
-            disabled={!signature}
-            className={`w-full rounded-md py-4 text-[14px] font-semibold transition sm:text-[15px] ${
-              signature
-                ? "bg-[#18283f] text-white hover:bg-[#263a57]"
-                : "cursor-not-allowed bg-[#e2e8f0] text-[#94a3b8]"
-            }`}
-          >
-            {signature
-              ? "전자계약 완료"
-              : "전자서명 후 계약을 완료해 주세요"}
-          </button>
-
-        </div>
-      )}
-
-
-      {/* =========================================================
-          완료 상태
-      ========================================================= */}
-      {completed && (
-        <div className="relative z-10 mx-5 mb-8 border border-[#cbd5e1] bg-[#f8fafc] px-5 py-5 sm:mx-10 sm:mb-10 sm:px-6 md:mx-12">
-
-          <div className="flex items-center justify-between gap-4">
-
+          {signature ? (
             <div>
 
-              <div className="text-[10px] tracking-[2px] text-[#64748b]">
-                ELECTRONIC CONTRACT
-              </div>
+              <p
+                className="
+                  mb-3
+                  text-sm
+                  font-semibold
+                  text-[#526b8b]
+                "
+              >
+                계약상대자 전자서명
+              </p>
 
-              <div className="mt-1 text-[15px] font-bold text-[#18283f] sm:text-[16px]">
-                전자서명이 완료되었습니다.
+              <div
+                className="
+                  flex
+                  min-h-[130px]
+                  items-center
+                  justify-center
+                  overflow-hidden
+                  rounded-xl
+                  border
+                  border-[#dbe2ea]
+                  bg-white
+                  p-4
+                  sm:min-h-[150px]
+                  sm:p-5
+                "
+              >
+
+                <img
+                  src={signature}
+                  alt="전자서명"
+                  className="
+                    max-h-[110px]
+                    max-w-full
+                    object-contain
+                    sm:max-h-[120px]
+                  "
+                />
+
               </div>
 
             </div>
-
-
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-[#18283f] text-[16px] font-bold text-[#18283f]">
-              ✓
+          ) : (
+            <div
+              className="
+                flex
+                min-h-[120px]
+                items-center
+                justify-center
+                rounded-xl
+                border
+                border-dashed
+                border-[#cbd5e1]
+                bg-white
+                px-4
+                text-center
+                text-xs
+                leading-5
+                text-[#94a3b8]
+                sm:min-h-[130px]
+                sm:text-sm
+              "
+            >
+              아직 전자서명이 등록되지 않았습니다.
             </div>
+          )}
+
+        </div>
+
+      </section>
+
+      {/* ==================================================
+          CONFIRMATION
+      ================================================== */}
+
+      {!completed && (
+        <section
+          className="
+            px-5
+            pb-10
+            sm:px-12
+            sm:pb-12
+          "
+        >
+
+          <div
+            className="
+              space-y-4
+              rounded-2xl
+              border
+              border-[#dbe2ea]
+              bg-white
+              p-4
+              sm:space-y-3
+              sm:p-7
+            "
+          >
+
+            <label
+              className="
+                flex
+                cursor-pointer
+                items-start
+                gap-3
+              "
+            >
+
+              <input
+                type="checkbox"
+                checked={
+                  agreementChecked
+                }
+                onChange={(e) =>
+                  onAgreementChange(
+                    e.target.checked
+                  )
+                }
+                className="
+                  mt-1
+                  h-5
+                  w-5
+                  shrink-0
+                  cursor-pointer
+                  accent-[#18283f]
+                "
+              />
+
+              <span
+                className="
+                  break-keep
+                  text-xs
+                  leading-6
+                  text-[#334155]
+                  sm:text-sm
+                "
+              >
+                본 계약서의 계약내용을 확인하였으며, 기재된 품목·수량·금액·납품조건을 확인하였습니다.
+              </span>
+
+            </label>
+
+            <label
+              className="
+                flex
+                cursor-pointer
+                items-start
+                gap-3
+              "
+            >
+
+              <input
+                type="checkbox"
+                checked={
+                  specialChecked
+                }
+                onChange={(e) =>
+                  onSpecialChange(
+                    e.target.checked
+                  )
+                }
+                className="
+                  mt-1
+                  h-5
+                  w-5
+                  shrink-0
+                  cursor-pointer
+                  accent-[#18283f]
+                "
+              />
+
+              <span
+                className="
+                  break-keep
+                  text-xs
+                  leading-6
+                  text-[#334155]
+                  sm:text-sm
+                "
+              >
+                계약조건 및 특약사항을 모두 확인하였으며 이에 동의합니다.
+              </span>
+
+            </label>
 
           </div>
 
-        </div>
+          {/* 버튼 */}
+
+          <div
+            className="
+              mt-5
+              flex
+              flex-col
+              gap-3
+              sm:flex-row
+            "
+          >
+
+            <button
+              type="button"
+              onClick={onSign}
+              className="
+                min-h-[54px]
+                flex-1
+                rounded-xl
+                border
+                border-[#18283f]
+                bg-white
+                px-5
+                py-4
+                text-sm
+                font-bold
+                text-[#18283f]
+                transition
+                hover:bg-[#f5f7fa]
+                sm:text-base
+              "
+            >
+              {signature
+                ? "전자서명 다시하기"
+                : "전자서명하기"}
+            </button>
+
+            <button
+              type="button"
+              onClick={onComplete}
+              className="
+                min-h-[54px]
+                flex-1
+                rounded-xl
+                bg-[#18283f]
+                px-5
+                py-4
+                text-sm
+                font-bold
+                text-white
+                transition
+                hover:bg-[#263a57]
+                sm:text-base
+              "
+            >
+              전자계약 완료
+            </button>
+
+          </div>
+
+        </section>
       )}
 
+      {/* ==================================================
+          COMPLETED
+      ================================================== */}
 
-      {/* =========================================================
-          하단
-      ========================================================= */}
-      <footer className="relative z-10 border-t border-[#cbd5e1] px-5 py-7 sm:px-10 md:px-12">
+      {completed && (
+        <section
+          className="
+            border-t
+            border-[#e2e8f0]
+            px-5
+            py-9
+            text-center
+            sm:px-12
+            sm:py-10
+          "
+        >
 
-        <div className="flex flex-col items-center justify-between gap-2 text-center text-[10px] leading-5 text-[#7b8798] sm:flex-row sm:text-left">
+          <div
+            className="
+              mx-auto
+              max-w-xl
+              rounded-2xl
+              border
+              border-[#cbd5e1]
+              bg-[#f8fafc]
+              px-5
+              py-7
+            "
+          >
 
-          <span>
-            본 전자문서는 전자계약 시스템을 통해 작성되었습니다.
-          </span>
+            <p
+              className="
+                text-base
+                font-bold
+                text-[#18283f]
+                sm:text-lg
+              "
+            >
+              전자계약이 완료되었습니다.
+            </p>
 
-          <span className="tracking-[1px]">
-            ELECTRONIC DOCUMENT
-          </span>
+            <p
+              className="
+                mt-2
+                break-keep
+                text-xs
+                leading-6
+                text-[#64748b]
+                sm:text-sm
+              "
+            >
+              본 계약서는 전자서명이 완료된 계약문서입니다.
+            </p>
 
-        </div>
+          </div>
+
+        </section>
+      )}
+
+      {/* ==================================================
+          FOOTER
+      ================================================== */}
+
+      <footer
+        className="
+          border-t
+          border-[#e2e8f0]
+          px-5
+          py-6
+          text-center
+          sm:px-12
+          sm:py-7
+        "
+      >
+
+        <p
+          className="
+            text-[9px]
+            tracking-[0.2em]
+            text-[#94a3b8]
+            sm:text-[10px]
+            sm:tracking-[0.25em]
+          "
+        >
+          OFFICIAL ELECTRONIC DOCUMENT
+        </p>
+
+        <p
+          className="
+            mt-2
+            text-[10px]
+            text-[#94a3b8]
+            sm:text-xs
+          "
+        >
+          제25보병사단 전자계약 시스템
+        </p>
 
       </footer>
 
