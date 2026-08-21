@@ -624,14 +624,14 @@ export default function ContractView({
               alt=""
               aria-hidden="true"
               className="
-                h-[280px]
-                w-[280px]
+                h-[300px]
+                w-[300px]
                 max-w-none
                 shrink-0
                 object-contain
-                opacity-[0.03]
-                sm:h-[430px]
-                sm:w-[430px]
+                opacity-[0.045]
+                sm:h-[480px]
+                sm:w-[480px]
               "
             />
 
