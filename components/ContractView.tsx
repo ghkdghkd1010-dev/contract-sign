@@ -243,17 +243,13 @@ export default function ContractView({
 
               <img
                 src="/25-logo.webp"
-  alt=""
-  aria-hidden="true"
-  className="
-    h-[220px]
-    w-[220px]
-    max-w-none
-    shrink-0
-    object-contain
-    opacity-[0.035]
-    sm:h-[360px]
-    sm:w-[360px]
+                alt="제25보병사단 마크"
+                className="
+                  h-[50px]
+                  w-[50px]
+                  object-contain
+                  sm:h-[68px]
+                  sm:w-[68px]
                 "
               />
 
