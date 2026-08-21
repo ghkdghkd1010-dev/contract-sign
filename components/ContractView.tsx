@@ -36,13 +36,8 @@ type ContractViewProps = {
   agreementChecked: boolean;
   specialChecked: boolean;
 
-  onAgreementChange: (
-    checked: boolean
-  ) => void;
-
-  onSpecialChange: (
-    checked: boolean
-  ) => void;
+  onAgreementChange: (checked: boolean) => void;
+  onSpecialChange: (checked: boolean) => void;
 
   onSign: () => void;
   onComplete: () => void;
@@ -52,9 +47,7 @@ type ContractViewProps = {
 // 금액
 // ==========================================
 
-function formatMoney(
-  value?: number | null
-) {
+function formatMoney(value?: number | null) {
   if (
     value === null ||
     value === undefined ||
@@ -70,9 +63,7 @@ function formatMoney(
 // 날짜
 // ==========================================
 
-function formatDate(
-  value?: string | null
-) {
+function formatDate(value?: string | null) {
   if (!value) {
     return "-";
   }
@@ -92,19 +83,9 @@ function formatDate(
 
 // ==========================================
 // 계약조건 조문 제목 정리
-//
-// 예:
-// 제1조 (목적)
-// ↓
-// 제1조(목적)
-//
-// 본문 전체를 변경하지 않고
-// 조문 번호와 괄호 사이의 공백만 정리
 // ==========================================
 
-function formatContractText(
-  text: string
-) {
+function formatContractText(text: string) {
   if (!text) {
     return "계약조건이 없습니다.";
   }
@@ -164,29 +145,16 @@ export default function ContractView({
         ? [
             {
               id: 1,
-
-              productName:
-                productName,
-
-              productSpec:
-                productDescription ||
-                "",
-
-              quantity:
-                Number(
-                  quantity || 0
-                ),
-
-              unitPrice:
-                Number(
-                  unitPrice || 0
-                ),
+              productName: productName,
+              productSpec: productDescription || "",
+              quantity: Number(quantity || 0),
+              unitPrice: Number(unitPrice || 0),
             },
           ]
         : [];
 
   // ========================================
-  // 화면에서 다시 합계 계산
+  // 실제 화면 표시 합계
   // ========================================
 
   const calculatedTotal =
@@ -194,7 +162,7 @@ export default function ContractView({
       (sum, item) =>
         sum +
         Number(item.quantity || 0) *
-        Number(item.unitPrice || 0),
+          Number(item.unitPrice || 0),
       0
     );
 
@@ -322,12 +290,7 @@ export default function ContractView({
 
           {/* RIGHT */}
 
-          <div
-            className="
-              shrink-0
-              text-right
-            "
-          >
+          <div className="shrink-0 text-right">
 
             <p
               className="
@@ -471,20 +434,9 @@ export default function ContractView({
 
         </div>
 
-        <div
-          className="
-            border-t-[2px]
-            border-[#18283f]
-          "
-        >
+        <div className="border-t-[2px] border-[#18283f]">
 
-          <div
-            className="
-              grid
-              grid-cols-1
-              sm:grid-cols-2
-            "
-          >
+          <div className="grid grid-cols-1 sm:grid-cols-2">
 
             {/* 갑 */}
 
@@ -650,14 +602,9 @@ export default function ContractView({
 
           {/* ==================================================
               워터마크
-
-              PC:
-              360px × 360px
-
-              모바일:
-              220px × 220px
-
-              25사단 로고 그대로 유지
+              모바일 280px
+              PC 430px
+              25사단 로고 유지
           ================================================== */}
 
           <div
@@ -677,14 +624,14 @@ export default function ContractView({
               alt=""
               aria-hidden="true"
               className="
-                h-[220px]
-                w-[220px]
+                h-[280px]
+                w-[280px]
                 max-w-none
                 shrink-0
                 object-contain
-                opacity-[0.035]
-                sm:h-[360px]
-                sm:w-[360px]
+                opacity-[0.03]
+                sm:h-[430px]
+                sm:w-[430px]
               "
             />
 
@@ -847,106 +794,97 @@ export default function ContractView({
 
             </div>
 
-            {displayItems.map(
-              (item, index) => {
+            {displayItems.map((item, index) => {
 
-                const itemTotal =
-                  Number(item.quantity || 0) *
-                  Number(item.unitPrice || 0);
+              const itemTotal =
+                Number(item.quantity || 0) *
+                Number(item.unitPrice || 0);
 
-                return (
-                  <div
-                    key={
-                      item.id ??
-                      index
-                    }
-                    className="
-                      grid
-                      grid-cols-[minmax(0,1fr)_130px_150px_170px]
-                      border-b
-                      border-[#ccd6e2]
-                    "
-                  >
+              return (
+                <div
+                  key={item.id ?? index}
+                  className="
+                    grid
+                    grid-cols-[minmax(0,1fr)_130px_150px_170px]
+                    border-b
+                    border-[#ccd6e2]
+                  "
+                >
 
-                    <div className="min-w-0 px-5 py-5">
+                  <div className="min-w-0 px-5 py-5">
 
-                      <p
-                        className="
-                          break-words
-                          font-bold
-                          text-[#18283f]
-                        "
-                      >
-                        {item.productName || "-"}
-                      </p>
-
-                      {item.productSpec && (
-                        <p
-                          className="
-                            mt-2
-                            whitespace-pre-wrap
-                            break-words
-                            text-xs
-                            leading-6
-                            text-[#718096]
-                          "
-                        >
-                          {item.productSpec}
-                        </p>
-                      )}
-
-                    </div>
-
-                    <div
+                    <p
                       className="
-                        border-l
-                        border-[#ccd6e2]
-                        px-5
-                        py-5
-                        text-center
-                        text-[#334155]
-                      "
-                    >
-                      {Number(
-                        item.quantity || 0
-                      ).toLocaleString("ko-KR")}
-                    </div>
-
-                    <div
-                      className="
-                        border-l
-                        border-[#ccd6e2]
-                        px-5
-                        py-5
-                        text-right
-                        text-[#334155]
-                      "
-                    >
-                      {formatMoney(
-                        item.unitPrice
-                      )}
-                    </div>
-
-                    <div
-                      className="
-                        border-l
-                        border-[#ccd6e2]
-                        px-5
-                        py-5
-                        text-right
-                        font-semibold
+                        break-words
+                        font-bold
                         text-[#18283f]
                       "
                     >
-                      {formatMoney(
-                        itemTotal
-                      )}
-                    </div>
+                      {item.productName || "-"}
+                    </p>
+
+                    {item.productSpec && (
+                      <p
+                        className="
+                          mt-2
+                          whitespace-pre-wrap
+                          break-words
+                          text-xs
+                          leading-6
+                          text-[#718096]
+                        "
+                      >
+                        {item.productSpec}
+                      </p>
+                    )}
 
                   </div>
-                );
-              }
-            )}
+
+                  <div
+                    className="
+                      border-l
+                      border-[#ccd6e2]
+                      px-5
+                      py-5
+                      text-center
+                      text-[#334155]
+                    "
+                  >
+                    {Number(
+                      item.quantity || 0
+                    ).toLocaleString("ko-KR")}
+                  </div>
+
+                  <div
+                    className="
+                      border-l
+                      border-[#ccd6e2]
+                      px-5
+                      py-5
+                      text-right
+                      text-[#334155]
+                    "
+                  >
+                    {formatMoney(item.unitPrice)}
+                  </div>
+
+                  <div
+                    className="
+                      border-l
+                      border-[#ccd6e2]
+                      px-5
+                      py-5
+                      text-right
+                      font-semibold
+                      text-[#18283f]
+                    "
+                  >
+                    {formatMoney(itemTotal)}
+                  </div>
+
+                </div>
+              );
+            })}
 
           </div>
 
@@ -956,210 +894,201 @@ export default function ContractView({
 
           <div className="sm:hidden">
 
-            {displayItems.map(
-              (item, index) => {
+            {displayItems.map((item, index) => {
 
-                const itemTotal =
-                  Number(item.quantity || 0) *
-                  Number(item.unitPrice || 0);
+              const itemTotal =
+                Number(item.quantity || 0) *
+                Number(item.unitPrice || 0);
 
-                return (
+              return (
+                <div
+                  key={item.id ?? index}
+                  className="
+                    border-b
+                    border-[#ccd6e2]
+                  "
+                >
+
                   <div
-                    key={
-                      item.id ??
-                      index
-                    }
                     className="
-                      border-b
-                      border-[#ccd6e2]
+                      bg-[#f5f7fa]
+                      px-4
+                      py-3
                     "
                   >
 
-                    <div
+                    <span
                       className="
-                        bg-[#f5f7fa]
-                        px-4
-                        py-3
+                        text-xs
+                        font-bold
+                        tracking-wide
+                        text-[#526b8b]
                       "
                     >
+                      품목 {index + 1}
+                    </span>
 
-                      <span
+                  </div>
+
+                  <div
+                    className="
+                      space-y-4
+                      px-4
+                      py-5
+                    "
+                  >
+
+                    {/* 제품명 */}
+
+                    <div>
+
+                      <p className="text-xs text-[#718096]">
+                        제품명
+                      </p>
+
+                      <p
                         className="
-                          text-xs
+                          mt-1
+                          break-words
                           font-bold
-                          tracking-wide
-                          text-[#526b8b]
+                          text-[#18283f]
                         "
                       >
-                        품목 {index + 1}
-                      </span>
+                        {item.productName || "-"}
+                      </p>
 
                     </div>
 
-                    <div
-                      className="
-                        space-y-4
-                        px-4
-                        py-5
-                      "
-                    >
+                    {/* 제품 상세 설명 */}
 
-                      {/* 제품명 */}
-
+                    {item.productSpec && (
                       <div>
 
                         <p className="text-xs text-[#718096]">
-                          제품명
+                          제품 상세 설명
+                        </p>
+
+                        <p
+                          className="
+                            mt-1
+                            whitespace-pre-wrap
+                            break-words
+                            text-sm
+                            leading-6
+                            text-[#334155]
+                          "
+                        >
+                          {item.productSpec}
+                        </p>
+
+                      </div>
+                    )}
+
+                    {/* 수량 / 단가 */}
+
+                    <div
+                      className="
+                        grid
+                        grid-cols-2
+                        gap-3
+                      "
+                    >
+
+                      <div
+                        className="
+                          min-w-0
+                          rounded-lg
+                          bg-[#f8fafc]
+                          px-3
+                          py-3
+                        "
+                      >
+
+                        <p className="text-xs text-[#718096]">
+                          수량
                         </p>
 
                         <p
                           className="
                             mt-1
                             break-words
-                            font-bold
+                            font-semibold
                             text-[#18283f]
                           "
                         >
-                          {item.productName || "-"}
+                          {Number(
+                            item.quantity || 0
+                          ).toLocaleString("ko-KR")}
                         </p>
 
                       </div>
 
-                      {/* 제품 상세 설명 */}
-
-                      {item.productSpec && (
-                        <div>
-
-                          <p className="text-xs text-[#718096]">
-                            제품 상세 설명
-                          </p>
-
-                          <p
-                            className="
-                              mt-1
-                              whitespace-pre-wrap
-                              break-words
-                              text-sm
-                              leading-6
-                              text-[#334155]
-                            "
-                          >
-                            {item.productSpec}
-                          </p>
-
-                        </div>
-                      )}
-
-                      {/* 수량 / 단가 */}
-
                       <div
                         className="
-                          grid
-                          grid-cols-2
-                          gap-3
+                          min-w-0
+                          rounded-lg
+                          bg-[#f8fafc]
+                          px-3
+                          py-3
                         "
                       >
 
-                        <div
+                        <p className="text-xs text-[#718096]">
+                          단가
+                        </p>
+
+                        <p
                           className="
-                            min-w-0
-                            rounded-lg
-                            bg-[#f8fafc]
-                            px-3
-                            py-3
-                          "
-                        >
-
-                          <p className="text-xs text-[#718096]">
-                            수량
-                          </p>
-
-                          <p
-                            className="
-                              mt-1
-                              break-words
-                              font-semibold
-                              text-[#18283f]
-                            "
-                          >
-                            {Number(
-                              item.quantity || 0
-                            ).toLocaleString("ko-KR")}
-                          </p>
-
-                        </div>
-
-                        <div
-                          className="
-                            min-w-0
-                            rounded-lg
-                            bg-[#f8fafc]
-                            px-3
-                            py-3
-                          "
-                        >
-
-                          <p className="text-xs text-[#718096]">
-                            단가
-                          </p>
-
-                          <p
-                            className="
-                              mt-1
-                              break-words
-                              text-sm
-                              font-semibold
-                              text-[#18283f]
-                            "
-                          >
-                            {formatMoney(
-                              item.unitPrice
-                            )}
-                          </p>
-
-                        </div>
-
-                      </div>
-
-                      {/* 품목 금액 */}
-
-                      <div
-                        className="
-                          flex
-                          items-center
-                          justify-between
-                          gap-3
-                          border-t
-                          border-[#e2e8f0]
-                          pt-4
-                        "
-                      >
-
-                        <span className="shrink-0 text-xs text-[#718096]">
-                          품목 금액
-                        </span>
-
-                        <span
-                          className="
+                            mt-1
                             break-words
-                            text-right
-                            font-bold
+                            text-sm
+                            font-semibold
                             text-[#18283f]
                           "
                         >
-                          {formatMoney(
-                            itemTotal
-                          )}
-                        </span>
+                          {formatMoney(item.unitPrice)}
+                        </p>
 
                       </div>
 
                     </div>
 
+                    {/* 품목 금액 */}
+
+                    <div
+                      className="
+                        flex
+                        items-center
+                        justify-between
+                        gap-3
+                        border-t
+                        border-[#e2e8f0]
+                        pt-4
+                      "
+                    >
+
+                      <span className="shrink-0 text-xs text-[#718096]">
+                        품목 금액
+                      </span>
+
+                      <span
+                        className="
+                          break-words
+                          text-right
+                          font-bold
+                          text-[#18283f]
+                        "
+                      >
+                        {formatMoney(itemTotal)}
+                      </span>
+
+                    </div>
+
                   </div>
-                );
-              }
-            )}
+
+                </div>
+              );
+            })}
 
           </div>
 
@@ -1191,23 +1120,11 @@ export default function ContractView({
 
           <div>
 
-            <p
-              className="
-                text-sm
-                font-semibold
-                text-[#526b8b]
-              "
-            >
+            <p className="text-sm font-semibold text-[#526b8b]">
               총 계약 금액
             </p>
 
-            <p
-              className="
-                mt-1
-                text-xs
-                text-[#94a3b8]
-              "
-            >
+            <p className="mt-1 text-xs text-[#94a3b8]">
               전체 계약품목 금액 합계
             </p>
 
@@ -1222,9 +1139,7 @@ export default function ContractView({
               sm:text-2xl
             "
           >
-            {formatMoney(
-              finalTotal
-            )}
+            {formatMoney(finalTotal)}
           </p>
 
         </div>
@@ -1280,9 +1195,7 @@ export default function ContractView({
                 sm:text-sm
               "
             >
-              {formatDate(
-                deliveryDate
-              )}
+              {formatDate(deliveryDate)}
             </div>
 
           </div>
@@ -1499,9 +1412,7 @@ export default function ContractView({
 
               <input
                 type="checkbox"
-                checked={
-                  agreementChecked
-                }
+                checked={agreementChecked}
                 onChange={(e) =>
                   onAgreementChange(
                     e.target.checked
@@ -1542,9 +1453,7 @@ export default function ContractView({
 
               <input
                 type="checkbox"
-                checked={
-                  specialChecked
-                }
+                checked={specialChecked}
                 onChange={(e) =>
                   onSpecialChange(
                     e.target.checked
