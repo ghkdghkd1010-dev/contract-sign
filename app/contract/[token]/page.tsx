@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { supabase } from "@/lib/supabase";
 
 import ContractView from "@/components/ContractView";
 import SignatureModal from "@/components/SignatureModal";
@@ -18,8 +17,8 @@ type ContractData = {
   signature: string | null;
   status: string;
 
-  company_business?: string | null;
-  contractor_business?: string | null;
+  company_business_number?: string | null;
+  contractor_business_number?: string | null;
 
   product_name?: string | null;
   product_spec?: string | null;
@@ -58,17 +57,19 @@ export default function ContractTokenPage() {
   const [unitPrice, setUnitPrice] = useState<number | null>(null);
   const [totalPrice, setTotalPrice] = useState<number | null>(null);
 
-  const [deliveryDate, setDeliveryDate] = useState<string | null>(null);
+  const [deliveryDate, setDeliveryDate] =
+    useState<string | null>(null);
+
   const [deliveryAddress, setDeliveryAddress] = useState("");
 
   const [signature, setSignature] = useState("");
   const [completed, setCompleted] = useState(false);
 
-  // 계약내용 확인
-  const [agreementChecked, setAgreementChecked] = useState(false);
+  const [agreementChecked, setAgreementChecked] =
+    useState(false);
 
-  // 계약조건 및 특약사항 확인
-  const [specialChecked, setSpecialChecked] = useState(false);
+  const [specialChecked, setSpecialChecked] =
+    useState(false);
 
   useEffect(() => {
     if (!token) return;
@@ -80,16 +81,20 @@ export default function ContractTokenPage() {
     try {
       setLoading(true);
 
-      const response = await fetch(`/api/contract/${token}`, {
-        method: "GET",
-        cache: "no-store",
-      });
+      const response = await fetch(
+        `/api/contract/${token}`,
+        {
+          method: "GET",
+          cache: "no-store",
+        }
+      );
 
       const result = await response.json();
 
       if (!response.ok) {
         throw new Error(
-          result.error || "계약서를 불러오지 못했습니다."
+          result.error ||
+            "계약서를 불러오지 못했습니다."
         );
       }
 
@@ -99,32 +104,57 @@ export default function ContractTokenPage() {
       setContractor(data.contractor || "");
 
       setCompanyBusinessNumber(
-        data.company_business || ""
+        data.company_business_number || ""
       );
 
       setContractorBusinessNumber(
-        data.contractor_business || ""
+        data.contractor_business_number || ""
       );
 
-      setContractText(data.contract_text || "");
+      setContractText(
+        data.contract_text || ""
+      );
 
-      setProductName(data.product_name || "");
+      setProductName(
+        data.product_name || ""
+      );
 
-      // DB의 product_spec을
-      // 화면에서는 "제품 상세설명"으로 표시
-      setProductDescription(data.product_spec || "");
+      setProductDescription(
+        data.product_spec || ""
+      );
 
-      setQuantity(data.quantity ?? null);
-      setUnitPrice(data.unit_price ?? null);
-      setTotalPrice(data.total_price ?? null);
+      setQuantity(
+        data.quantity ?? null
+      );
 
-      setDeliveryDate(data.delivery_date ?? null);
-      setDeliveryAddress(data.delivery_address || "");
+      setUnitPrice(
+        data.unit_price ?? null
+      );
 
-      setSignature(data.signature || "");
-      setCompleted(data.status === "completed");
+      setTotalPrice(
+        data.total_price ?? null
+      );
+
+      setDeliveryDate(
+        data.delivery_date ?? null
+      );
+
+      setDeliveryAddress(
+        data.delivery_address || ""
+      );
+
+      setSignature(
+        data.signature || ""
+      );
+
+      setCompleted(
+        data.status === "completed"
+      );
     } catch (error) {
-      console.error(error);
+      console.error(
+        "계약서 불러오기 오류:",
+        error
+      );
 
       alert(
         error instanceof Error
@@ -136,7 +166,7 @@ export default function ContractTokenPage() {
     }
   };
 
-  // 서명 저장
+  // 전자서명 저장
   const handleSave = (image: string) => {
     setSignature(image);
     setOpen(false);
@@ -144,7 +174,6 @@ export default function ContractTokenPage() {
 
   // 계약 완료
   const handleComplete = async () => {
-    // 두 가지 확인사항을 모두 체크했는지 확인
     if (!agreementChecked || !specialChecked) {
       alert(
         "계약내용과 계약조건 및 특약사항을 모두 확인해주세요."
@@ -152,41 +181,47 @@ export default function ContractTokenPage() {
       return;
     }
 
-    // 서명 확인
     if (!signature) {
       alert("먼저 전자서명을 해주세요.");
       return;
     }
 
-    // 이미 완료된 계약인지 확인
     if (completed) {
       alert("이미 완료된 계약입니다.");
       return;
     }
 
     try {
-      const contractId = await getContractId();
+      const response = await fetch(
+        `/api/contract/${token}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            signature,
+          }),
+        }
+      );
 
-      const { error } = await supabase
-        .from("contract")
-        .update({
-          signature,
-          status: "completed",
-          completed_at: new Date().toISOString(),
-        })
-        .eq("id", contractId);
+      const result = await response.json();
 
-      if (error) {
-        console.error("계약 완료 저장 오류:", error);
-        alert(error.message);
-        return;
+      if (!response.ok) {
+        throw new Error(
+          result.error ||
+            "계약 완료 처리 중 오류가 발생했습니다."
+        );
       }
 
       await loadContract();
 
       alert("전자계약이 완료되었습니다.");
     } catch (error) {
-      console.error("계약 완료 처리 오류:", error);
+      console.error(
+        "계약 완료 처리 오류:",
+        error
+      );
 
       alert(
         error instanceof Error
@@ -194,22 +229,6 @@ export default function ContractTokenPage() {
           : "계약 완료 처리 중 오류가 발생했습니다."
       );
     }
-  };
-
-  // public_token으로 계약 내부 ID 확인
-  const getContractId = async () => {
-    const response = await fetch(`/api/contract/${token}`, {
-      method: "GET",
-      cache: "no-store",
-    });
-
-    const data = await response.json();
-
-    if (!response.ok || !data?.id) {
-      throw new Error("계약 정보를 확인할 수 없습니다.");
-    }
-
-    return data.id;
   };
 
   if (loading) {
@@ -232,12 +251,18 @@ export default function ContractTokenPage() {
     <main className="min-h-screen bg-[#f3f5f8] px-3 py-5 sm:px-4 sm:py-8">
       <ContractView
         company={company}
-        companyBusinessNumber={companyBusinessNumber}
+        companyBusinessNumber={
+          companyBusinessNumber
+        }
         contractor={contractor}
-        contractorBusinessNumber={contractorBusinessNumber}
+        contractorBusinessNumber={
+          contractorBusinessNumber
+        }
         contractText={contractText}
         productName={productName}
-        productDescription={productDescription}
+        productDescription={
+          productDescription
+        }
         quantity={quantity}
         unitPrice={unitPrice}
         totalPrice={totalPrice}
@@ -247,8 +272,12 @@ export default function ContractTokenPage() {
         completed={completed}
         agreementChecked={agreementChecked}
         specialChecked={specialChecked}
-        onAgreementChange={setAgreementChecked}
-        onSpecialChange={setSpecialChecked}
+        onAgreementChange={
+          setAgreementChecked
+        }
+        onSpecialChange={
+          setSpecialChecked
+        }
         onSign={() => setOpen(true)}
         onComplete={handleComplete}
       />
