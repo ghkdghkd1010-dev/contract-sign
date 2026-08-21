@@ -629,7 +629,7 @@ export default function ContractView({
                 max-w-none
                 shrink-0
                 object-contain
-                opacity-[0.15]
+                opacity-[0.11]
                 sm:h-[480px]
                 sm:w-[480px]
               "
