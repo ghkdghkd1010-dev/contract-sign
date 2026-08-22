@@ -242,8 +242,8 @@ export default function ContractView({
             >
 
               <img
-                src="/25-logo.webp"
-                alt="제25보병사단 마크"
+                src="/32-logo.webp"
+                alt="제32보병사단 마크"
                 className="
                   h-[50px]
                   w-[50px]
@@ -620,7 +620,7 @@ export default function ContractView({
           >
 
             <img
-              src="/25-logo.webp"
+              src="/32-logo.webp"
               alt=""
               aria-hidden="true"
               className="
